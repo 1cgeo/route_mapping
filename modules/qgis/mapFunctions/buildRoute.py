@@ -37,6 +37,9 @@ class BuildRoute(MapFunction):
             routeSettings['schemaRoute'],
             routeSettings['tableRoute']
         )
+        sourcePoint = self.createPointFromWkt(sourceInfo['edgePoint'])
+        targetPoint = self.createPointFromWkt(targetInfo['edgePoint'])
+        xmin, ymin, xmax, ymax = self.getXYMaxMinFromPoints(sourcePoint, targetPoint)
         routeWkt = database.getRouteWkt(
             sourceInfo['edgeId'],
             sourceInfo['edgePos'],
@@ -46,19 +49,31 @@ class BuildRoute(MapFunction):
             routeSettings['schemaRoute'],
             routeSettings['tableRoute'],
             routeSettings['schemaRestriction'],
-            routeSettings['tableRestriction']
+            routeSettings['tableRestriction'],
+            (points['source']['x'], points['source']['y']),
+            (points['target']['x'], points['target']['y'])
         )
-        """ print(QgsGeometry.fromWkt(routeWkt))
-        return
-        qgsPoints = [self.createPointFromWkt(sourceInfo['edgePoint'])]
-        [ qgsPoints.append(self.createPointFromWkt(item[2])) for item in routePoints if item[2] ]
-        qgsPoints.append(self.createPointFromWkt(targetInfo['edgePoint'])) """
         self.exportToMemoryLayer(QgsGeometry.fromWkt(routeWkt), srid)
 
     def createPointFromWkt(self, wkt):
         p = QgsPoint()
         p.fromWkt(wkt)
         return p
+
+    def getXYMaxMinFromPoints(self, p1, p2):
+        xmin = p1.x()
+        xmax = p1.x()
+        if p2.x() > p1.x():
+            xmax = p2.x()
+        else:
+            xmin = p2.x()
+        ymin = p1.y()
+        ymax = p1.y()
+        if p2.y() > p1.y():
+            ymax = p2.y()
+        else:
+            ymin = p2.y()
+        return xmin, ymin, xmax, ymax
 
     def exportToMemoryLayer(self, geometry, srid):
         vectorLyr =  core.QgsVectorLayer('LineString?crs=epsg:{0}&field=id:int'.format(srid), 'rota' , "memory")
