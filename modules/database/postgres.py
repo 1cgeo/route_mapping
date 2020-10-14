@@ -284,7 +284,8 @@ class Postgres:
                                 ST_LineLocatePoint(geom, (SELECT geom from sourcepoint))
                             END
                         )
-                    )
+                    ),
+                    ST_AsText(geom)
                 FROM lineorigin;'''.format(
                 edgeSourceId=edgeSourceId,
                 edgeSourcePos=edgeSourcePos,
