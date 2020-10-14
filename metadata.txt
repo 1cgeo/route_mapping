@@ -1,0 +1,9 @@
+[general]
+name=Route mapping
+email=me@example.com
+author=1cgeo
+qgisMinimumVersion=3.0
+description=Ferramenta para facilitar a criar relacionamento de restrição de rota em uma tabela não espacial
+version=0.0.0
+icon=icons/icon.png
+; end of mandatory metadata
