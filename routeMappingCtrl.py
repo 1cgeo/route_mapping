@@ -70,8 +70,8 @@ class RouteMappingCtrl:
         self.qgis.addDockWidget(self.routeGeneratorDock, side='left') 
 
     def cleanGeneratorDockSettings(self):
-        self.captureSourceCoordTool.resetRubberBand()
-        self.captureTargetCoordTool.resetRubberBand()
+        self.captureSourceCoordTool.resetRubberBand() if self.captureSourceCoordTool else ''
+        self.captureTargetCoordTool.resetRubberBand() if self.captureTargetCoordTool else ''
 
     def activeCaptureSourceCoordinates(self, setCoordinate):
         if self.captureSourceCoordTool:
