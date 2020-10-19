@@ -198,7 +198,7 @@ class Postgres:
             'edgeWkt': query[3]
         }
 
-    def getRouteWkt(self,
+    def getRoute(self,
             edgeSourceId,
             edgeSourcePos,
             edgeTargetId,
@@ -214,79 +214,114 @@ class Postgres:
         pgCursor = self.getConnection().cursor()
         pgCursor.execute(
             '''WITH sourcepoint AS (
-                    SELECT ST_GeomFromText('POINT({sourceX} {sourceY})', {srid}) AS geom
-                ),
-                targetpoint AS (
-                    SELECT ST_GeomFromText('POINT({targetX} {targetY})', {srid}) AS geom
-                ),
-                lineorigin AS (
+                SELECT ST_GeomFromText('POINT({sourceX} {sourceY})', {srid}) AS "geom"
+            ),
+            targetpoint AS (
+                SELECT ST_GeomFromText('POINT({targetX} {targetY})', {srid}) AS "geom"
+            ),
+            routeedges AS (
+                SELECT
+                    edge.id,
+                    edge.name,
+                    edge.velocity,
+                    ST_Transform(edge.geom, {srid}) AS "geom"
+                FROM (
+                    SELECT
+                        *
+                    FROM 
+                        pgr_trsp(
+                            'SELECT 
+                                id::INT4, 
+                                source::INT4, 
+                                target::INT4, 
+                                cost::FLOAT8, 
+                                reverse_cost::FLOAT8 
+                            FROM 
+                                {edgeSchema}.{edgeTable}', 
+                            {edgeSourceId}, 
+                            {edgeSourcePos}, 
+                            {edgeTargetId}, 
+                            {edgeTargetPos},
+                            TRUE,
+                            TRUE, 
+                            'SELECT 
+                                10000::FLOAT8 AS to_cost, 
+                                id_2::INT4 AS target_id, 
+                                id_1::TEXT AS via_path 
+                            FROM 
+                                {restrictionSchema}.{restrictionTable}'
+                        )
+                    ORDER BY seq
+                ) AS route
+                LEFT JOIN (
                     SELECT 
+                        *
+                    FROM 
+                        {edgeSchema}.{edgeTable}
+                ) AS edge
+                ON route.id2 = edge.id
+            ),
+            routeline AS (
+                SELECT 
+                    ST_LineSubstring(
+                        geom,
+                        CASE
+                            WHEN 
+                                ST_LineLocatePoint(geom, (SELECT geom from targetpoint)) < ST_LineLocatePoint(geom, (SELECT geom from sourcepoint)) 
+                        THEN 
+                            ST_LineLocatePoint(geom, (SELECT geom from targetpoint))
+                        ELSE 
+                            ST_LineLocatePoint(geom, (SELECT geom from sourcepoint))
+                        END,
+                        CASE
+                            WHEN 
+                                ST_LineLocatePoint(geom, (SELECT geom from targetpoint)) > ST_LineLocatePoint(geom, (SELECT geom from sourcepoint)) 
+                        THEN 
+                            ST_LineLocatePoint(geom, (SELECT geom from targetpoint))
+                        ELSE 
+                            ST_LineLocatePoint(geom, (SELECT geom from sourcepoint))
+                        END
+                    ) AS "geom"
+                FROM (
+                    SELECT
                         ST_LineMerge(
                             ST_Union(
-                                ST_Transform(edge.geom, {srid})
+                                geom
                             )
                         ) AS "geom"
-                    FROM (
-                        SELECT
-                            *
-                        FROM 
-                            pgr_trsp(
-                                'SELECT 
-                                    id::INT4, 
-                                    source::INT4, 
-                                    target::INT4, 
-                                    cost::FLOAT8, 
-                                    reverse_cost::FLOAT8 
-                                FROM 
-                                    {edgeSchema}.{edgeTable}', 
-                                {edgeSourceId}, 
-                                {edgeSourcePos}, 
-                                {edgeTargetId}, 
-                                {edgeTargetPos},
-                                TRUE,
-                                TRUE, 
-                                'SELECT 
-                                    10000::FLOAT8 AS to_cost, 
-                                    id_2::INT4 AS target_id, 
-                                    id_1::TEXT AS via_path 
-                                FROM 
-                                    {restrictionSchema}.{restrictionTable}'
-                            )
-                        ORDER BY seq
-                    ) AS route
-                    LEFT JOIN (
-                        SELECT 
-                            id, 
-                            geom
-                        FROM 
-                            {edgeSchema}.{edgeTable}
-                    ) AS edge
-                    ON route.id2 = edge.id
-                )
+                    FROM
+                        routeedges
+                ) AS line
+            ),
+            pointssplit AS (
                 SELECT 
-                    ST_AsText(
-                        ST_LineSubstring(
-                            geom,
-                            CASE
-                                WHEN 
-                                    ST_LineLocatePoint(geom, (SELECT geom from targetpoint)) < ST_LineLocatePoint(geom, (SELECT geom from sourcepoint)) 
-                            THEN 
-                                ST_LineLocatePoint(geom, (SELECT geom from targetpoint))
-                            ELSE 
-                                ST_LineLocatePoint(geom, (SELECT geom from sourcepoint))
-                            END,
-                            CASE
-                                WHEN 
-                                    ST_LineLocatePoint(geom, (SELECT geom from targetpoint)) > ST_LineLocatePoint(geom, (SELECT geom from sourcepoint)) 
-                            THEN 
-                                ST_LineLocatePoint(geom, (SELECT geom from targetpoint))
-                            ELSE 
-                                ST_LineLocatePoint(geom, (SELECT geom from sourcepoint))
-                            END
-                        )
-                    ),
-                    ST_AsText(geom)
-                FROM lineorigin;'''.format(
+                ST_Collect(ST_Intersection(a.geom, b.geom)) AS "geom"
+                FROM 
+                    routeedges as a, 
+                    routeedges as b
+                WHERE
+                    a.id != b.id
+                    AND
+                    ST_Touches(a.geom, b.geom)
+            ),
+            routesteps AS (
+                SELECT 
+                    ROW_NUMBER () OVER (ORDER BY routeedges.name) AS "id",
+                    ((ST_Length(routelines.geom::geography)/1000) / routeedges.velocity) AS "hours",
+                    ST_Length(routelines.geom::geography)/1000 AS "distance_km",
+                    routeedges.name,
+                    routeedges.velocity,
+                    ST_AsText(routelines.geom) AS "wkt"
+                FROM (
+                    SELECT 
+                        (ST_Dump(ST_Split(geom, (SELECT geom FROM pointssplit)))).geom AS "geom"
+                    FROM
+                        routeline
+                ) AS routelines
+                INNER JOIN routeedges
+                ON ST_Intersects(routelines.geom, routeedges.geom)
+            )
+            SELECT * FROM routesteps;'''.format(
                 edgeSourceId=edgeSourceId,
                 edgeSourcePos=edgeSourcePos,
                 edgeTargetId=edgeTargetId,
@@ -304,5 +339,5 @@ class Postgres:
         )
         query = pgCursor.fetchall()
         pgCursor.close()
-        return query[0][0]
+        return query
         

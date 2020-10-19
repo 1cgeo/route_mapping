@@ -18,6 +18,6 @@ class MapFunctionsFactory:
             'CreateNewMapView': CreateNewMapView,
             'ConvergencePoint': ConvergencePoint,
             'CreateRelationship': CreateRelationship,
-            'BuildRoute': BuildRoute
+            'BuildRoute': BuildRoute,
         }
         return functionNames[functionName]()

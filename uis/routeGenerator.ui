@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>416</width>
-    <height>320</height>
+    <width>447</width>
+    <height>542</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Gerador de Rota</string>
+   <string>Rotas</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout">
@@ -25,34 +25,11 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>396</width>
-         <height>279</height>
+         <width>427</width>
+         <height>501</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Início:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1" colspan="2">
-         <widget class="QLineEdit" name="sourceCoordLe"/>
-        </item>
-        <item row="0" column="3">
-         <widget class="QPushButton" name="sourceCoordBtn">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_2">
           <property name="text">
@@ -60,8 +37,23 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1" colspan="2">
-         <widget class="QLineEdit" name="targetCoordLe"/>
+        <item row="5" column="0" rowspan="2" colspan="4">
+         <widget class="QScrollArea" name="stepsScrollArea">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="stepsScrollWidget">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>407</width>
+             <height>184</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout"/>
+          </widget>
+         </widget>
         </item>
         <item row="1" column="3">
          <widget class="QPushButton" name="targetCoordBtn">
@@ -76,6 +68,16 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Início:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" colspan="2">
+         <widget class="QLineEdit" name="targetCoordLe"/>
+        </item>
         <item row="2" column="0" colspan="2">
          <spacer name="horizontalSpacer">
           <property name="orientation">
@@ -89,12 +91,8 @@
           </property>
          </spacer>
         </item>
-        <item row="2" column="2">
-         <widget class="QPushButton" name="runBtn">
-          <property name="text">
-           <string>Gerar rota</string>
-          </property>
-         </widget>
+        <item row="0" column="1" colspan="2">
+         <widget class="QLineEdit" name="sourceCoordLe"/>
         </item>
         <item row="2" column="3">
          <widget class="QPushButton" name="configBtn">
@@ -109,18 +107,39 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
+        <item row="2" column="2">
+         <widget class="QPushButton" name="runBtn">
+          <property name="text">
+           <string>Gerar rota</string>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>159</height>
-           </size>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QPushButton" name="sourceCoordBtn">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
-         </spacer>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0" colspan="4">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Etapas:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="4">
+         <widget class="QLabel" name="routeInfoLb">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

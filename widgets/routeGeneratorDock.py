@@ -111,6 +111,49 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
                     'y': self.targetCoordLe.text().split(';')[1]
                 }
             })
+        except:
+            self.showErrorMessageBox('Erro', 'Rota não encontrada!')
         finally:
             QtWidgets.QApplication.restoreOverrideCursor()
+
+
+    def setRouteInfo(self, distance, time):
+        self.routeInfoLb.setText('''
+            <p><b>Distância total:</b> {km} {m}</p>
+            <p><b>Tempo total:</b> {hours} {minutes}</p>
+            '''.format(
+                km='{0} km'.format(distance[0]) if distance[0] else '',
+                m=' {0} m'.format(distance[1]) if distance[1] else '',
+                hours='{0} h'.format(time[0]) if time[0] else '',
+                minutes=' {0} m'.format(time[1]) if time[1] else '',
+                seconds=' {0} s'.format(time[2]) if time[2] else ''
+            )
+        )
     
+    def addRouteStepInfo(self, name, distance, time):
+        stepLb = QtWidgets.QLabel()
+        stepLb.setText('''
+            <p><b>Nome:</b> {name}</p>
+            <p><b>Distância:</b> {km}{m}</p>
+            <p><b>Tempo:</b> {hours}{minutes}{seconds}</p>
+            '''.format(
+                name=name if name else '',
+                km='{0} km'.format(distance[0]) if distance[0] else '',
+                m=' {0} m'.format(distance[1]) if distance[1] else '',
+                hours='{0} h'.format(time[0]) if time[0] else '',
+                minutes=' {0} m'.format(time[1]) if time[1] else '',
+                seconds=' {0} s'.format(time[2]) if time[2] else ''
+            )
+        )
+        stepLb.setStyleSheet("border-bottom-width: 1px; border-bottom-style: solid; border-radius: 0px;")
+        self.stepsScrollWidget.layout().addWidget(stepLb)
+
+    def removeAllRouteSteps(self):
+        layout = self.stepsScrollWidget.layout()
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is None:
+                continue
+            widget.deleteLater()
+            

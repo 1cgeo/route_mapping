@@ -53,14 +53,19 @@ class RouteMappingCtrl:
         [self.qgis.removeActionDigitizeToolBar(action) for action in self.actions ]
 
     def activeCreateRelationshipTool(self):
+        if not self.isValidRouteSettings():
+            return
+        routeSettings = self.getRouteSettings()
         settings = {
             'maxSelection': 2,
             'layer': {
-                    'name': 'rot_trecho_rede_rodoviaria_l',
-                    'fieldName': 'id'
+                'schema': routeSettings['schemaRoute'],
+                'name': routeSettings['tableRoute'],
+                'fieldName': 'id'
             }, 
             'relationship': {
-                'name': 'rot_restricao',
+                'schema': routeSettings['schemaRestriction'],
+                'name': routeSettings['tableRestriction'],
                 'fieds': [ 'id_1', 'id_2']
             }
         }
@@ -110,16 +115,66 @@ class RouteMappingCtrl:
         messageDlg.show(parent, title, message)
 
     def buildRoute(self, points):
+        if not self.isValidRouteSettings():
+            return
         buildRoute = self.qgis.getMapFunction('BuildRoute')
         routeSettings = self.getRouteSettings()
-        if not routeSettings:
-            self.showErrorMessageBox(
-                self.qgis.getMainWindow(),
-                'Erro',
-                'Preencha as configurações!'
-            )
-            return
-        buildRoute.run(points, routeSettings)
+        route = buildRoute.run(
+            points['source']['x'],
+            points['source']['y'],
+            points['target']['x'],
+            points['target']['y'],
+            routeSettings['schemaRoute'],
+            routeSettings['tableRoute'],
+            routeSettings['schemaRestriction'],
+            routeSettings['tableRestriction'],
+            routeSettings['dbName'], 
+            routeSettings['dbHost'], 
+            routeSettings['dbPort'], 
+            routeSettings['dbUser'], 
+            routeSettings['dbPass']
+        )
+        self.showRouteInfo(route)
+
+    def showRouteInfo(self, route):
+        self.routeGeneratorDock.removeAllRouteSteps()
+        getNumberDecimal = lambda n: float(str(n-int(n))[1:] if str(n-int(n))[1:] != '' else 0)
+        def formatDistance(totalKm):
+            km = int(totalKm)
+            m = int(getNumberDecimal(totalKm)*1000)
+            return (km, m)
+        def formatTime(totalHours):
+            hours = int(totalHours)
+            minutes = int(getNumberDecimal(totalHours)*60) 
+            seconds = int(getNumberDecimal(totalHours)*60*60)
+            return (hours, minutes, seconds)
+        totalKm = 0
+        totalHours = 0
+        for step in route:
+            name = step[3]
+            hours = step[1]
+            time = formatTime(hours)
+            km = step[2]
+            distance = formatDistance(km)
+            self.routeGeneratorDock.addRouteStepInfo(name, distance, time)
+            totalKm += km
+            totalHours += hours
+        distance = formatDistance(totalKm)
+        time = formatTime(totalHours)
+        self.routeGeneratorDock.setRouteInfo(distance, time)
+
+    def isValidRouteSettings(self):
+        if self.hasRouteSettings():
+            return True
+        self.showErrorMessageBox(
+            self.qgis.getMainWindow(),
+            'Erro',
+            'Preencha as configurações!'
+        )
+        return False
+        
+    def hasRouteSettings(self):
+        return self.getRouteSettings()
 
     def getRouteSettings(self):
         routeSettings = self.qgis.getSettingsVariable('routeSettings')
@@ -127,8 +182,7 @@ class RouteMappingCtrl:
         
     def showConfigDialog(self):
         configDialog = self.guiFactory.getWidget('ConfigDialog', mediator=self)
-        routeSettings = self.getRouteSettings()
-        configDialog.load(routeSettings) if routeSettings else ''
+        configDialog.load(self.getRouteSettings()) if self.hasRouteSettings() else ''
         if not configDialog.exec_():
             return
         self.qgis.setSettingsVariable('routeSettings', json.dumps(configDialog.dump()))

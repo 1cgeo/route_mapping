@@ -14,51 +14,68 @@ class BuildRoute(MapFunction):
         super(BuildRoute, self).__init__()
         self.databaseFactory = databaseFactory
 
-    def run(self, points, routeSettings):
+    def run(self, 
+            sourceX,
+            sourceY,
+            targetX,
+            targetY,
+            schemaRoute,
+            tableRoute,
+            schemaRestriction,
+            tableRestriction,
+            dbName,
+            dbHost,
+            dbPort,
+            dbUser,
+            dbPass
+        ):
         srid = iface.mapCanvas().mapSettings().destinationCrs().postgisSrid()
         database = self.databaseFactory.createPostgres(
-            routeSettings['dbName'], 
-            routeSettings['dbHost'], 
-            routeSettings['dbPort'], 
-            routeSettings['dbUser'], 
-            routeSettings['dbPass']
+            dbName,
+            dbHost,
+            dbPort,
+            dbUser,
+            dbPass,
         )
         sourceInfo = database.getNearestRoutingPoint(
-            points['source']['x'],
-            points['source']['y'],
+            sourceX,
+            sourceY,
             srid,
-            routeSettings['schemaRoute'],
-            routeSettings['tableRoute']
+            schemaRoute,
+            tableRoute
         )
         targetInfo = database.getNearestRoutingPoint(
-            points['target']['x'],
-            points['target']['y'],
+            targetX,
+            targetY,
             srid,
-            routeSettings['schemaRoute'],
-            routeSettings['tableRoute']
+            schemaRoute,
+            tableRoute
         )
-        routeWkt = database.getRouteWkt(
+        route = database.getRoute(
             sourceInfo['edgeId'],
             sourceInfo['edgePos'],
             targetInfo['edgeId'],
             targetInfo['edgePos'],
             srid,
-            routeSettings['schemaRoute'],
-            routeSettings['tableRoute'],
-            routeSettings['schemaRestriction'],
-            routeSettings['tableRestriction'],
-            (points['source']['x'], points['source']['y']),
-            (points['target']['x'], points['target']['y'])
+            schemaRoute,
+            tableRoute,
+            schemaRestriction,
+            tableRestriction,
+            (sourceX, sourceY),
+            (targetX, targetY)
         )
-        self.exportToMemoryLayer(QgsGeometry.fromWkt(routeWkt), srid)
+        self.exportToMemoryLayer(route, srid)
+        return route
 
-    def exportToMemoryLayer(self, geometry, srid):
+    def exportToMemoryLayer(self, route, srid):
         vectorLyr =  core.QgsVectorLayer('LineString?crs=epsg:{0}&field=id:int'.format(srid), 'rota' , "memory")
         vl = core.QgsProject().instance().addMapLayer(vectorLyr)
         vl.startEditing()
         feat = core.QgsFeature(vl.fields())
-        feat.setGeometry(geometry)
-        vl.addFeature(feat)
+        for step in route:
+            feat.setAttribute('id', step[0])
+            feat.setGeometry(QgsGeometry.fromWkt(step[-1]))
+            vl.addFeature(feat)
         vl.commitChanges()
 
         
