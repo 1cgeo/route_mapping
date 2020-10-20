@@ -63,10 +63,11 @@ class  CreateRelationship(QgsMapToolIdentify, MapTool):
             return
         feature = validFeatures[0].mFeature
         layer = validFeatures[0].mLayer
-        if feature.id() in self.selectedFeatureIds:
-            self.selectedFeatureIds.remove(feature.id())        
+        fkValue = feature[self.getForeignKeyLayer()]
+        if fkValue in self.selectedFeatureIds:
+            self.selectedFeatureIds.remove(fkValue)        
             return
-        self.selectedFeatureIds.append(feature.id())
+        self.selectedFeatureIds.append(fkValue)
         if not(len(self.selectedFeatureIds) == self.getMaxSelection()):
             return
         self.execute()
