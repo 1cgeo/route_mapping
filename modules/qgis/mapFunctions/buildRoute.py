@@ -19,10 +19,10 @@ class BuildRoute(MapFunction):
             sourceY,
             targetX,
             targetY,
-            schemaRoute,
-            tableRoute,
-            schemaRestriction,
-            tableRestriction,
+            edgeSchema,
+            edgeTable,
+            restrictionSchema,
+            restrictionTable,
             dbName,
             dbHost,
             dbPort,
@@ -37,30 +37,30 @@ class BuildRoute(MapFunction):
             dbUser,
             dbPass,
         )
-        sourceInfo = database.getNearestRoutingPoint(
+        sourcetId, sourcePos = database.getNearestRoutingPoint(
             sourceX,
             sourceY,
             srid,
-            schemaRoute,
-            tableRoute
+            edgeSchema,
+            edgeTable
         )
-        targetInfo = database.getNearestRoutingPoint(
+        targetId, targetPos = database.getNearestRoutingPoint(
             targetX,
             targetY,
             srid,
-            schemaRoute,
-            tableRoute
+            edgeSchema,
+            edgeTable
         )
         route = database.getRoute(
-            sourceInfo['edgeId'],
-            sourceInfo['edgePos'],
-            targetInfo['edgeId'],
-            targetInfo['edgePos'],
+            sourcetId, 
+            sourcePos,
+            targetId, 
+            targetPos,
             srid,
-            schemaRoute,
-            tableRoute,
-            schemaRestriction,
-            tableRestriction,
+            edgeSchema,
+            edgeTable,
+            restrictionSchema,
+            restrictionTable,
             (sourceX, sourceY),
             (targetX, targetY)
         )

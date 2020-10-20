@@ -23,6 +23,18 @@ class RouteMappingCtrl:
         self.captureTargetCoordTool = None
         self.routeGeneratorDock = self.guiFactory.getWidget('RouteGeneratorDock', mediator=self)
 
+    def showInfoMessageBox(self, parent, title, message):
+        messageDlg = self.messageFactory.createMessage('InfoMessageBox')
+        messageDlg.show(parent, title, message)
+    
+    def showErrorMessageBox(self, parent, title, message):
+        messageDlg = self.messageFactory.createMessage('ErrorMessageBox')
+        messageDlg.show(parent, title, message)
+
+    def showQuestionMessageBox(self, parent, title, message):
+        messageDlg = self.messageFactory.createMessage('QuestionMessageBox')
+        return messageDlg.show(parent, title, message)
+
     def loadPlugin(self):
         for actionSettings in self.getActionSettings():
             action = self.qgis.createAction(
@@ -44,6 +56,11 @@ class RouteMappingCtrl:
                 'name': 'Restrição de rota',
                 'iconPath':os.path.join(self.ROOT_PATH_ICON, 'turnRestriction.png'),
                 'callback': self.activeCreateRelationshipTool
+            },
+            {
+                'name': 'Gerar estrutura de rotas',
+                'iconPath':os.path.join(self.ROOT_PATH_ICON, 'transform.png'),
+                'callback': self.createRouteStructure
             }
         ]
 
@@ -53,7 +70,7 @@ class RouteMappingCtrl:
         [self.qgis.removeActionDigitizeToolBar(action) for action in self.actions ]
 
     def activeCreateRelationshipTool(self):
-        if not self.isValidRouteSettings():
+        if not self.validateSettings():
             return
         routeSettings = self.getRouteSettings()
         settings = {
@@ -106,16 +123,8 @@ class RouteMappingCtrl:
         }
         self.captureTargetCoordTool = self.qgis.activeTool('GetClickCoordinates', settings=settings)
 
-    def showInfoMessageBox(self, parent, title, message):
-        messageDlg = self.messageFactory.createMessage('InfoMessageBox')
-        messageDlg.show(parent, title, message)
-    
-    def showErrorMessageBox(self, parent, title, message):
-        messageDlg = self.messageFactory.createMessage('ErrorMessageBox')
-        messageDlg.show(parent, title, message)
-
     def buildRoute(self, points):
-        if not self.isValidRouteSettings():
+        if not self.validateSettings():
             return
         buildRoute = self.qgis.getMapFunction('BuildRoute')
         routeSettings = self.getRouteSettings()
@@ -124,10 +133,10 @@ class RouteMappingCtrl:
             points['source']['y'],
             points['target']['x'],
             points['target']['y'],
-            routeSettings['schemaRoute'],
-            routeSettings['tableRoute'],
-            routeSettings['schemaRestriction'],
-            routeSettings['tableRestriction'],
+            routeSettings['edgeSchema'],
+            routeSettings['edgeTable'],
+            routeSettings['restrictionSchema'],
+            routeSettings['restrictionTable'],
             routeSettings['dbName'], 
             routeSettings['dbHost'], 
             routeSettings['dbPort'], 
@@ -163,7 +172,7 @@ class RouteMappingCtrl:
         time = formatTime(totalHours)
         self.routeGeneratorDock.setRouteInfo(distance, time)
 
-    def isValidRouteSettings(self):
+    def validateSettings(self):
         if self.hasRouteSettings():
             return True
         self.showErrorMessageBox(
@@ -177,13 +186,45 @@ class RouteMappingCtrl:
         return self.getRouteSettings()
 
     def getRouteSettings(self):
-        routeSettings = self.qgis.getSettingsVariable('routeSettings')
+        routeSettings = self.qgis.getSettingsVariable('routeSettings:v1')
         return json.loads(routeSettings) if routeSettings else {}
+
+    def setRouteSettings(self, routeSettings):
+        self.qgis.setSettingsVariable('routeSettings:v1', json.dumps(routeSettings))
         
     def showConfigDialog(self):
         configDialog = self.guiFactory.getWidget('ConfigDialog', mediator=self)
         configDialog.load(self.getRouteSettings()) if self.hasRouteSettings() else ''
         if not configDialog.exec_():
             return
-        self.qgis.setSettingsVariable('routeSettings', json.dumps(configDialog.dump()))
+        self.setRouteSettings(configDialog.dump())
+        
+    def createRouteStructure(self, b):
+        if not self.validateSettings():
+            return
+        if not self.showQuestionMessageBox(
+                self.qgis.getMainWindow(),
+                'Aviso',
+                'Gerar nova estrutura de rotas?'
+            ):
+            return
+        buildRouteStructure = self.qgis.getMapFunction('BuildRouteStructure')
+        routeSettings = self.getRouteSettings()
+        success = buildRouteStructure.run(
+            routeSettings['routeSchema'],
+            routeSettings['routeTable'],
+            routeSettings['edgeSchema'],
+            routeSettings['edgeTable'],
+            routeSettings['dbName'], 
+            routeSettings['dbHost'], 
+            routeSettings['dbPort'], 
+            routeSettings['dbUser'], 
+            routeSettings['dbPass']
+        )
+        messageBox = self.showInfoMessageBox if success else self.showErrorMessageBox
+        messageBox(
+            self.qgis.getMainWindow(),
+            'Aviso' if success else 'Erro',
+            'Estrutura gerada com sucesso!' if success else 'Erro ao gerar estrutura!'
+        )
         

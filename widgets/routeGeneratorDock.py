@@ -119,8 +119,8 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
 
     def setRouteInfo(self, distance, time):
         self.routeInfoLb.setText('''
-            <p><b>Distância total:</b> {km} {m}</p>
-            <p><b>Tempo total:</b> {hours} {minutes}</p>
+            <p><b>Distância total:</b> {km}{m}</p>
+            <p><b>Tempo total:</b> {hours}{minutes}{seconds}</p>
             '''.format(
                 km='{0} km'.format(distance[0]) if distance[0] else '',
                 m=' {0} m'.format(distance[1]) if distance[1] else '',

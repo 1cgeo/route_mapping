@@ -1,4 +1,40 @@
 import psycopg2
+from functools import wraps
+
+def transaction(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        args = list(args[:])
+        conn = args[0].getConnection()
+        cursor = conn.cursor()
+        args.insert(1, cursor)
+        try:
+            query = func(*args)
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print("{} error: {}".format(func.__name__, e))
+        finally:
+            cursor.close()
+            return query
+    return inner
+
+def notransaction(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        args = list(args[:])
+        conn = args[0].getConnection()
+        cursor = conn.cursor()
+        args.insert(1, cursor)
+        try:
+            query = func(*args)
+        except Exception as e:
+            print("{} error: {}".format(func.__name__, e))
+        finally:
+            cursor.close()
+            return query
+    return inner
+
 
 class Postgres:
     
@@ -20,7 +56,7 @@ class Postgres:
                 dbName, dbUser, dbHost, dbPort, dbPassword
             )
         )
-        self.connection.set_session(autocommit=True)
+        self.connection#.set_session(autocommit=True)
 
     def getConnection(self):
         return self.connection
@@ -40,34 +76,32 @@ class Postgres:
                 continue
             return self.getTableValues('dominio', field)
         
-    def getTableValues(self, tableSchema, tableName):
-        pgCursor = self.getConnection().cursor()
-        pgCursor.execute(
+    @notransaction
+    def getTableValues(self, cursor, tableSchema, tableName):
+        cursor.execute(
             """SELECT * FROM {}.{};""".format(tableSchema, tableName)
         )
-        query = pgCursor.fetchall()
-        pgCursor.close()
+        query = cursor.fetchall()
         if not query:
             return []
         return query
 
-    def getTablesbyColumn(self, columnName):
-        pgCursor = self.getConnection().cursor()
-        pgCursor.execute(
+    @notransaction
+    def getTablesbyColumn(self, cursor, columnName):
+        cursor.execute(
             """SELECT c.relname
             FROM pg_class AS c
             INNER JOIN pg_attribute AS a ON a.attrelid = c.oid
             WHERE a.attname = '{0}' AND c.relkind = 'r';""".format(columnName)
         )
-        query = pgCursor.fetchall()
-        pgCursor.close()
+        query = cursor.fetchall()
         if not query:
             return []
         return [item[0] for item in query]
 
-    def getLayerContrainsCodes(self, layerName):
-        pgCursor = self.getConnection().cursor()
-        pgCursor.execute(
+    @notransaction
+    def getLayerContrainsCodes(self, cursor, layerName):
+        cursor.execute(
             """SELECT d.column_name, c.consrc
             FROM
             (SELECT conname, consrc FROM  pg_constraint) c
@@ -80,8 +114,7 @@ class Postgres:
                 layerName
             )
         )
-        query = pgCursor.fetchall()
-        pgCursor.close()
+        query = cursor.fetchall()
         if not query:
             return {}
         result = {}
@@ -96,9 +129,9 @@ class Postgres:
             result[field] = ",".join(codeList)
         return result
 
-    def getLayerColumns(self, layerName, layerSchema):
-        pgCursor = self.getConnection().cursor()
-        pgCursor.execute(
+    @notransaction
+    def getLayerColumns(self, cursor, layerName, layerSchema):
+        cursor.execute(
             """SELECT column_name 
             FROM information_schema.columns
             WHERE table_schema = '{0}'
@@ -108,15 +141,14 @@ class Postgres:
                 layerName
             )
         )
-        query = pgCursor.fetchall()
-        pgCursor.close()
+        query = cursor.fetchall()
         if not query:
             return []
         return [item[0] for item in query]
 
-    def getLayerDomains(self, layerName, layerSchema):
-        pgCursor = self.getConnection().cursor()
-        pgCursor.execute(
+    @notransaction
+    def getLayerDomains(self, cursor, layerName, layerSchema):
+        cursor.execute(
             """SELECT pg_get_constraintdef(c.oid) AS cdef
             FROM pg_constraint c
             JOIN pg_namespace n
@@ -133,8 +165,7 @@ class Postgres:
                 layerName
             )
         )
-        query = pgCursor.fetchall()
-        pgCursor.close()
+        query = cursor.fetchall()
         if not query:
             return {}
         return {
@@ -143,32 +174,31 @@ class Postgres:
             for item in query
         }
 
-    def getAttributeValueMap(self, layerName, layerSchema):        
+    @notransaction
+    def getAttributeValueMap(self, cursor, layerName, layerSchema):        
         domains = self.getLayerDomains(layerName, layerSchema)
         fieldsValueMap = []        
-        pgCursor = self.getConnection().cursor()
         for fieldName in domains:
             contrains = self.getLayerContrainsCodes(layerName)
-            pgCursor.execute(
+            cursor.execute(
                 "SELECT code, code_name FROM {0}.{1} {2};".format(
                     'dominios', 
                     domains[fieldName], 
                     'WHERE code IN ({0})'.format(contrains[fieldName]) if fieldName in contrains else ''
                 )
             )
-            query = pgCursor.fetchall()
+            query = cursor.fetchall()
             if not query:
                 continue
             fieldsValueMap.append({
                 'attribute': fieldName,
                 'valueMap': {v : k for k, v in dict(query).items()}
             })
-        pgCursor.close()
         return fieldsValueMap
 
-    def getNearestRoutingPoint(self, x, y, srid, edgeSchemaName, edgeTableName):
-        pgCursor = self.getConnection().cursor()
-        pgCursor.execute(
+    @notransaction
+    def getNearestRoutingPoint(self, cursor, x, y, srid, edgeSchemaName, edgeTableName):
+        cursor.execute(
             '''WITH targetpoint AS (
                 SELECT ST_GeomFromText('POINT({x} {y})', {srid}) AS geom
             )
@@ -189,16 +219,12 @@ class Postgres:
                 table=edgeTableName
             )
         )
-        query = pgCursor.fetchall()[0]
-        pgCursor.close()
-        return {
-            'edgeId': query[0],
-            'edgePos': query[1],
-            'edgePoint': query[2],
-            'edgeWkt': query[3]
-        }
+        query = cursor.fetchall()[0]
+        return (query[0], query[1],)
 
+    @notransaction
     def getRoute(self,
+            cursor,
             edgeSourceId,
             edgeSourcePos,
             edgeTargetId,
@@ -211,8 +237,7 @@ class Postgres:
             sourcePoint,
             targetPoint
         ):
-        pgCursor = self.getConnection().cursor()
-        pgCursor.execute(
+        cursor.execute(
             '''WITH sourcepoint AS (
                 SELECT ST_GeomFromText('POINT({sourceX} {sourceY})', {srid}) AS "geom"
             ),
@@ -304,6 +329,28 @@ class Postgres:
                     AND
                     ST_Touches(a.geom, b.geom)
             ),
+            preroutelines AS (
+                    SELECT
+                        (ST_Dump(ST_Split(geom, (SELECT geom FROM pointssplit)))).geom AS "geom"
+                    FROM
+                        routeline
+            ),
+            routelines AS (
+                    SELECT
+                        *
+                    FROM
+                        preroutelines
+                    UNION
+                    SELECT
+                        geom
+                    FROM routeline
+                    WHERE NOT EXISTS (
+                            SELECT
+                                *
+                            FROM
+                                preroutelines
+                    )
+            ),
             routesteps AS (
                 SELECT 
                     ROW_NUMBER () OVER (ORDER BY routeedges.name) AS "id",
@@ -312,14 +359,18 @@ class Postgres:
                     routeedges.name,
                     routeedges.velocity,
                     ST_AsText(routelines.geom) AS "wkt"
-                FROM (
-                    SELECT 
-                        (ST_Dump(ST_Split(geom, (SELECT geom FROM pointssplit)))).geom AS "geom"
-                    FROM
-                        routeline
-                ) AS routelines
+                FROM routelines
                 INNER JOIN routeedges
-                ON ST_Intersects(routelines.geom, routeedges.geom)
+                ON 
+                    ST_Intersects(
+                        ST_Transform(
+                            ST_Buffer(routelines.geom::geography, 2, 'endcap=square join=round')::geometry, 
+                            {srid}
+                        ), 
+                        routeedges.geom
+                    ) 
+                    AND 
+                    NOT ST_Touches(routelines.geom, routeedges.geom)
             )
             SELECT * FROM routesteps;'''.format(
                 edgeSourceId=edgeSourceId,
@@ -337,7 +388,128 @@ class Postgres:
                 targetY=targetPoint[1]
             )
         )
-        query = pgCursor.fetchall()
-        pgCursor.close()
+        query = cursor.fetchall()
         return query
-        
+
+    @transaction
+    def buildRouteStructure(self,
+            cursor,
+            routeSchemaName,
+            routeTableName,
+            edgeSchemaName,
+            edgeTableName
+        ):
+        cursor.execute('''
+                SELECT pgr_nodeNetwork('edgv.rotas', 1e-8, the_geom:='geom');
+            '''.format(schema=routeSchemaName, table=routeTableName)
+        )
+        cursor.execute('''
+            SELECT 
+                pgr_createTopology('{schema}.{table}',1e-8, the_geom:='geom', clean := TRUE);
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            ALTER TABLE 
+                {schema}.{table} 
+            ADD COLUMN IF NOT EXISTS 
+                distance FLOAT8;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            UPDATE 
+                {schema}.{table}
+            SET 
+                distance = ST_Length(ST_Transform(geom, 4674)::geography) / 1000;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            ALTER TABLE 
+                {schema}.{table} 
+            ADD COLUMN IF NOT EXISTS 
+                velocity INT4;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            UPDATE {edgeSchema}.{edgeTable} SET velocity = 
+                CASE
+                    WHEN old.limitevelocidade IS NOT NULL 
+                    THEN old.limitevelocidade
+                    ELSE 60
+                END
+            FROM 
+                {routeSchema}.{routeTable} as old
+            WHERE 
+                {edgeSchema}.{edgeTable}.old_id = old.id;
+            '''.format(
+                edgeSchema=edgeSchemaName, 
+                edgeTable=edgeTableName,
+                routeSchema=routeSchemaName, 
+                routeTable=routeTableName
+            )
+        )
+        cursor.execute('''
+                ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS time FLOAT8;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS cost FLOAT8;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            UPDATE {schema}.{table} SET cost = distance/velocity;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS bidirecional boolean;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+                UPDATE 
+                    {edgeSchema}.{edgeTable} AS noded
+                SET 
+                    bidirecional = trecho.bidirecional
+                FROM 
+                    {routeSchema}.{routeTable} AS trecho 
+                WHERE 
+                    noded.old_id = trecho.id;
+            '''.format(
+                edgeSchema=edgeSchemaName, 
+                edgeTable=edgeTableName,
+                routeSchema=routeSchemaName, 
+                routeTable=routeTableName
+            )
+        )
+        cursor.execute('''
+            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS reverse_cost FLOAT8;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            UPDATE 
+                {schema}.{table} as noded
+            SET 
+                reverse_cost = 
+                    CASE
+                        WHEN noded.bidirecional = TRUE 
+                        THEN noded.cost
+                        ELSE -1
+                    END
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+
+        cursor.execute('''
+            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS name FLOAT8;
+            '''.format(schema=edgeSchemaName, table=edgeTableName)
+        )
+        cursor.execute('''
+            UPDATE 
+                {edgeSchema}.{edgeTable} AS noded
+            SET 
+                name = (SELECT nome FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
+            '''.format(
+                edgeSchema=edgeSchemaName, 
+                edgeTable=edgeTableName,
+                routeSchema=routeSchemaName, 
+                routeTable=routeTableName
+            )
+        )
+        return True

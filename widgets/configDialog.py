@@ -14,10 +14,12 @@ class ConfigDialog(QtWidgets.QDialog, Widget):
             'dbHost': self.dbHostLe,
             'dbPort': self.dbPortLe,
             'dbPass': self.dbPassLe,
-            'schemaRoute': self.schemaRouteLe,
-            'tableRoute': self.tableRouteLe,
-            'schemaRestriction': self.schemaRestrictionLe,
-            'tableRestriction': self.tableRestrictionLe
+            'routeSchema': self.routeSchemaLe,
+            'routeTable': self.routeTableLe,
+            'edgeSchema': self.edgeSchemaLe,
+            'edgeTable': self.edgeTableLe,
+            'restrictionSchema': self.restrictionSchemaLe,
+            'restrictionTable': self.restrictionTableLe
         }
 
     def getUiPath(self):
@@ -32,7 +34,9 @@ class ConfigDialog(QtWidgets.QDialog, Widget):
         return self.mediator
 
     def load(self, data):
-        for key in self.mapConfig:
+        for key in data:
+            if not (key in self.mapConfig):
+                continue
             self.mapConfig[key].setText(data[key])
 
     def dump(self):
