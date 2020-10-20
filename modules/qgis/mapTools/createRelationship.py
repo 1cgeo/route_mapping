@@ -33,7 +33,7 @@ class  CreateRelationship(QgsMapToolIdentify, MapTool):
     def getLayerNameToSelect(self):
         return self.getSettings()['layer']['name']
 
-    def getForeignKeyLayer(self, layer):
+    def getForeignKeyLayer(self):
         return self.getSettings()['layer']['fieldName']
 
     def getMaxSelection(self):
