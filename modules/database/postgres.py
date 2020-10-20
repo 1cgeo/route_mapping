@@ -56,145 +56,9 @@ class Postgres:
                 dbName, dbUser, dbHost, dbPort, dbPassword
             )
         )
-        self.connection#.set_session(autocommit=True)
 
     def getConnection(self):
         return self.connection
-
-    def getFilterValues(self, layerName, layerSchema):
-        tablesWithFilter = self.getTablesbyColumn('filter')
-        if not tablesWithFilter:
-            return []
-        fields = self.getLayerColumns(layerName, layerSchema)
-        domains = self.getLayerDomains(layerName, layerSchema)
-        for field in fields:
-            if not(
-                    (field in domains) 
-                    and 
-                    (domains[field] in tablesWithFilter)
-                ):
-                continue
-            return self.getTableValues('dominio', field)
-        
-    @notransaction
-    def getTableValues(self, cursor, tableSchema, tableName):
-        cursor.execute(
-            """SELECT * FROM {}.{};""".format(tableSchema, tableName)
-        )
-        query = cursor.fetchall()
-        if not query:
-            return []
-        return query
-
-    @notransaction
-    def getTablesbyColumn(self, cursor, columnName):
-        cursor.execute(
-            """SELECT c.relname
-            FROM pg_class AS c
-            INNER JOIN pg_attribute AS a ON a.attrelid = c.oid
-            WHERE a.attname = '{0}' AND c.relkind = 'r';""".format(columnName)
-        )
-        query = cursor.fetchall()
-        if not query:
-            return []
-        return [item[0] for item in query]
-
-    @notransaction
-    def getLayerContrainsCodes(self, cursor, layerName):
-        cursor.execute(
-            """SELECT d.column_name, c.consrc
-            FROM
-            (SELECT conname, consrc FROM  pg_constraint) c
-            INNER JOIN
-            (
-                SELECT column_name, constraint_name
-                FROM information_schema.constraint_column_usage WHERE table_name = '{0}'
-            ) d
-            ON (c.conname = d.constraint_name AND not(d.column_name = 'id'));""".format(
-                layerName
-            )
-        )
-        query = cursor.fetchall()
-        if not query:
-            return {}
-        result = {}
-        for field, text in query:
-            if not(field and text):
-                return 
-            codeList = []
-            for code in " ".join(" ".join(text.split("(")).split(")")).split(" "):
-                if not code.isnumeric():
-                    continue
-                codeList.append(code)
-            result[field] = ",".join(codeList)
-        return result
-
-    @notransaction
-    def getLayerColumns(self, cursor, layerName, layerSchema):
-        cursor.execute(
-            """SELECT column_name 
-            FROM information_schema.columns
-            WHERE table_schema = '{0}'
-            AND table_name = '{1}'
-            AND NOT column_name='geom' AND NOT column_name='id';""".format(
-                layerSchema,
-                layerName
-            )
-        )
-        query = cursor.fetchall()
-        if not query:
-            return []
-        return [item[0] for item in query]
-
-    @notransaction
-    def getLayerDomains(self, cursor, layerName, layerSchema):
-        cursor.execute(
-            """SELECT pg_get_constraintdef(c.oid) AS cdef
-            FROM pg_constraint c
-            JOIN pg_namespace n
-            ON n.oid = c.connamespace
-            WHERE contype IN ('f')
-            AND n.nspname = '{0}'
-            AND (
-                conrelid::regclass::text IN ('{0}.{1}')
-                or
-                conrelid::regclass::text IN ('{1}')
-            );
-            """.format(
-                layerSchema,
-                layerName
-            )
-        )
-        query = cursor.fetchall()
-        if not query:
-            return {}
-        return {
-            item[0].split('(')[1].split(')')[0].replace(' ', '') :
-            item[0].split('(')[1].split('.')[1]
-            for item in query
-        }
-
-    @notransaction
-    def getAttributeValueMap(self, cursor, layerName, layerSchema):        
-        domains = self.getLayerDomains(layerName, layerSchema)
-        fieldsValueMap = []        
-        for fieldName in domains:
-            contrains = self.getLayerContrainsCodes(layerName)
-            cursor.execute(
-                "SELECT code, code_name FROM {0}.{1} {2};".format(
-                    'dominios', 
-                    domains[fieldName], 
-                    'WHERE code IN ({0})'.format(contrains[fieldName]) if fieldName in contrains else ''
-                )
-            )
-            query = cursor.fetchall()
-            if not query:
-                continue
-            fieldsValueMap.append({
-                'attribute': fieldName,
-                'valueMap': {v : k for k, v in dict(query).items()}
-            })
-        return fieldsValueMap
 
     @notransaction
     def getNearestRoutingPoint(self, cursor, x, y, srid, edgeSchemaName, edgeTableName):
@@ -249,6 +113,7 @@ class Postgres:
                     edge.id,
                     edge.name,
                     edge.velocity,
+                    route.seq,
                     ST_Transform(edge.geom, {srid}) AS "geom"
                 FROM (
                     SELECT
@@ -358,6 +223,7 @@ class Postgres:
                     ST_Length(routelines.geom::geography)/1000 AS "distance_km",
                     routeedges.name,
                     routeedges.velocity,
+                    routeedges.seq,
                     ST_AsText(routelines.geom) AS "wkt"
                 FROM routelines
                 INNER JOIN routeedges
@@ -372,7 +238,7 @@ class Postgres:
                     AND 
                     NOT ST_Touches(routelines.geom, routeedges.geom)
             )
-            SELECT * FROM routesteps;'''.format(
+            SELECT * FROM routesteps ORDER BY seq;'''.format(
                 edgeSourceId=edgeSourceId,
                 edgeSourcePos=edgeSourcePos,
                 edgeTargetId=edgeTargetId,
