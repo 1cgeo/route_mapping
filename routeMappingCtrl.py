@@ -76,13 +76,13 @@ class RouteMappingCtrl:
         settings = {
             'maxSelection': 2,
             'layer': {
-                'schema': routeSettings['schemaRoute'],
-                'name': routeSettings['tableRoute'],
+                'schema': routeSettings['edgeSchema'],
+                'name': routeSettings['edgeTable'],
                 'fieldName': 'id'
             }, 
             'relationship': {
-                'schema': routeSettings['schemaRestriction'],
-                'name': routeSettings['tableRestriction'],
+                'schema': routeSettings['restrictionSchema'],
+                'name': routeSettings['restrictionTable'],
                 'fieds': [ 'id_1', 'id_2']
             }
         }
