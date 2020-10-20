@@ -113,7 +113,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
                 width=self.widthLe.text(),
                 heigth=self.widthLe.text(),
                 tonnage=self.tonnageLe.text(),
-                largeVehicle=self.largeVehicleLe.isChecked()
+                largeVehicle=self.largeVehicleCbx.isChecked()
             )
         except:
             self.showErrorMessageBox('Erro', 'Rota não encontrada!')
