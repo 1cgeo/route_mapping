@@ -6,6 +6,7 @@ from route_mapping.modules.qgis.mapFunctions.createNewMapView import CreateNewMa
 from route_mapping.modules.qgis.mapFunctions.convergencePoint import ConvergencePoint
 from route_mapping.modules.qgis.mapFunctions.createRelationship import CreateRelationship
 from route_mapping.modules.qgis.mapFunctions.buildRoute import BuildRoute
+from route_mapping.modules.qgis.mapFunctions.buildRouteStructure import BuildRouteStructure
 
 class MapFunctionsFactory:
 
@@ -19,5 +20,6 @@ class MapFunctionsFactory:
             'ConvergencePoint': ConvergencePoint,
             'CreateRelationship': CreateRelationship,
             'BuildRoute': BuildRoute,
+            'BuildRouteStructure': BuildRouteStructure 
         }
         return functionNames[functionName]()
