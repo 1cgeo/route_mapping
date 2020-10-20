@@ -123,16 +123,23 @@ class RouteMappingCtrl:
         }
         self.captureTargetCoordTool = self.qgis.activeTool('GetClickCoordinates', settings=settings)
 
-    def buildRoute(self, points):
+    def buildRoute(self, 
+            sourcePoint, 
+            targetPoint, 
+            width,
+            heigth,
+            tonnage,
+            largeVehicle
+        ):
         if not self.validateSettings():
             return
         buildRoute = self.qgis.getMapFunction('BuildRoute')
         routeSettings = self.getRouteSettings()
         route = buildRoute.run(
-            points['source']['x'],
-            points['source']['y'],
-            points['target']['x'],
-            points['target']['y'],
+            sourcePoint['x'],
+            sourcePoint['y'],
+            targetPoint['x'],
+            targetPoint['y'],
             routeSettings['edgeSchema'],
             routeSettings['edgeTable'],
             routeSettings['restrictionSchema'],

@@ -15,7 +15,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             os.path.abspath(os.path.dirname(__file__)),
             '..',
             'uis',
-            'routeGenerator.ui'
+            'routeGeneratorDock.ui'
         )
 
     def closeEvent(self, e):
@@ -101,16 +101,20 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             return
         QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         try:
-            self.getMediator().buildRoute({
-                'source': {
+            self.getMediator().buildRoute(
+                {
                     'x': self.sourceCoordLe.text().split(';')[0],
                     'y': self.sourceCoordLe.text().split(';')[1]
                 },
-                'target': {
+                {
                     'x': self.targetCoordLe.text().split(';')[0],
                     'y': self.targetCoordLe.text().split(';')[1]
-                }
-            })
+                },
+                width=self.widthLe.text(),
+                heigth=self.widthLe.text(),
+                tonnage=self.tonnageLe.text(),
+                largeVehicle=self.largeVehicleLe.isChecked()
+            )
         except:
             self.showErrorMessageBox('Erro', 'Rota não encontrada!')
         finally:
