@@ -137,10 +137,32 @@ class Postgres:
                             TRUE, 
                             'SELECT 
                                 10000::FLOAT8 AS to_cost, 
-                                id_2::INT4 AS target_id, 
-                                id_1::TEXT AS via_path 
-                            FROM 
-                                {restrictionSchema}.{restrictionTable}'
+                                edge2.id::INT4 AS target_id, 
+                                edge1.id::TEXT AS via_path
+                            FROM  
+                                {restrictionSchema}.{restrictionTable} AS rest
+                            LEFT JOIN (
+                                SELECT 
+                                    id, 
+                                    old_id 
+                                FROM 
+                                    {routeSchemaName}.rotas_noded
+                            ) as edge1
+                            ON rest.id_1 = edge1.old_id
+
+                            LEFT JOIN (
+                                SELECT 
+                                    id, 
+                                    old_id 
+                                FROM 
+                                    {routeSchemaName}.rotas_noded
+                            ) as edge2
+                            ON rest.id_2 = edge2.old_id
+
+                            WHERE 
+                                edge1.id is NOT NULL 
+                                AND 
+                                edge2.id is NOT NULL'
                         )
                     ORDER BY seq
                 ) AS route
