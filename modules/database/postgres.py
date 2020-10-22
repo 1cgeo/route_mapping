@@ -116,86 +116,56 @@ class Postgres:
             targetpoint AS (
                 SELECT ST_GeomFromText('POINT(%(targetX)s %(targetY)s)', %(srid)s) AS "geom"
             ),
-            route AS (
-                SELECT
-                    *
-                FROM 
-                    pgr_trsp(
-                        %(edgeQuery)s, 
-                        %(edgeSourceId)s, 
-                        %(edgeSourcePos)s, 
-                        %(edgeTargetId)s, 
-                        %(edgeTargetPos)s,
-                        TRUE,
-                        TRUE, 
-                        'SELECT 
-                            10000::FLOAT8 AS to_cost, 
-                            edge2.id::INT4 AS target_id, 
-                            edge1.id::TEXT AS via_path
-                        FROM  
-                            {restrictionSchema}.{restrictionTable} AS rest
-                        LEFT JOIN (
-                            SELECT 
-                                id, 
-                                old_id 
-                            FROM 
-                                {routeSchemaName}.rotas_noded
-                        ) as edge1
-                        ON rest.id_1 = edge1.old_id
-
-                        LEFT JOIN (
-                            SELECT 
-                                id, 
-                                old_id 
-                            FROM 
-                                {routeSchemaName}.rotas_noded
-                        ) as edge2
-                        ON rest.id_2 = edge2.old_id
-
-                        WHERE 
-                            edge1.id is NOT NULL 
-                            AND 
-                            edge2.id is NOT NULL'
-                    )
-                ORDER BY seq
-            ),
-            edges AS (
+            routeedges AS (
                 SELECT
                     edge.id,
                     edge.name,
                     edge.velocity,
                     route.seq,
-                    ST_Transform(
-                        (
-                            CASE
-                            WHEN (seq = (SELECT MIN(seq) FROM route)) OR (seq = (SELECT MAX(seq) FROM route))
-                            THEN
-                                ST_LineSubstring(
-                                    edge.rgeom,
-                                    CASE
-                                        WHEN 
-                                            ST_LineLocatePoint(edge.rgeom, (SELECT geom from targetpoint)) < ST_LineLocatePoint(edge.rgeom, (SELECT geom from sourcepoint)) 
-                                    THEN 
-                                        ST_LineLocatePoint(edge.rgeom, (SELECT geom from targetpoint))
-                                    ELSE 
-                                        ST_LineLocatePoint(edge.rgeom, (SELECT geom from sourcepoint))
-                                    END,
-                                    CASE
-                                        WHEN 
-                                            ST_LineLocatePoint(edge.rgeom, (SELECT geom from targetpoint)) > ST_LineLocatePoint(edge.rgeom, (SELECT geom from sourcepoint)) 
-                                    THEN 
-                                        ST_LineLocatePoint(edge.rgeom, (SELECT geom from targetpoint))
-                                    ELSE 
-                                        ST_LineLocatePoint(edge.rgeom, (SELECT geom from sourcepoint))
-                                    END
-                                )
-                            ELSE
-                                edge.rgeom
-                            END
-                        ),
-                        %(srid)s
-                    ) AS "geom"
-                FROM route
+                    ST_Transform(edge.rgeom, %(srid)s) AS "geom"
+                FROM (
+                    SELECT
+                        *
+                    FROM 
+                        pgr_trsp(
+                            %(edgeQuery)s, 
+                            %(edgeSourceId)s, 
+                            %(edgeSourcePos)s, 
+                            %(edgeTargetId)s, 
+                            %(edgeTargetPos)s,
+                            TRUE,
+                            TRUE, 
+                            'SELECT 
+                                10000::FLOAT8 AS to_cost, 
+                                edge2.id::INT4 AS target_id, 
+                                edge1.id::TEXT AS via_path
+                            FROM  
+                                {restrictionSchema}.{restrictionTable} AS rest
+                            LEFT JOIN (
+                                SELECT 
+                                    id, 
+                                    old_id 
+                                FROM 
+                                    {routeSchemaName}.rotas_noded
+                            ) as edge1
+                            ON rest.id_1 = edge1.old_id
+
+                            LEFT JOIN (
+                                SELECT 
+                                    id, 
+                                    old_id 
+                                FROM 
+                                    {routeSchemaName}.rotas_noded
+                            ) as edge2
+                            ON rest.id_2 = edge2.old_id
+
+                            WHERE 
+                                edge1.id is NOT NULL 
+                                AND 
+                                edge2.id is NOT NULL'
+                        )
+                    ORDER BY seq
+                ) AS route
                 LEFT JOIN (
                     SELECT 
                         *
@@ -203,20 +173,95 @@ class Postgres:
                         {routeSchemaName}.rotas_noded
                 ) AS edge
                 ON route.id2 = edge.id
+            ),
+            routeline AS (
+                SELECT 
+                    ST_LineSubstring(
+                        geom,
+                        CASE
+                            WHEN 
+                                ST_LineLocatePoint(geom, (SELECT geom from targetpoint)) < ST_LineLocatePoint(geom, (SELECT geom from sourcepoint)) 
+                        THEN 
+                            ST_LineLocatePoint(geom, (SELECT geom from targetpoint))
+                        ELSE 
+                            ST_LineLocatePoint(geom, (SELECT geom from sourcepoint))
+                        END,
+                        CASE
+                            WHEN 
+                                ST_LineLocatePoint(geom, (SELECT geom from targetpoint)) > ST_LineLocatePoint(geom, (SELECT geom from sourcepoint)) 
+                        THEN 
+                            ST_LineLocatePoint(geom, (SELECT geom from targetpoint))
+                        ELSE 
+                            ST_LineLocatePoint(geom, (SELECT geom from sourcepoint))
+                        END
+                    ) AS "geom"
+                FROM (
+                    SELECT
+                        ST_LineMerge(
+                            ST_Union(
+                                geom
+                            )
+                        ) AS "geom"
+                    FROM
+                        routeedges
+                ) AS line
+            ),
+            pointssplit AS (
+                SELECT 
+                ST_Collect(ST_Intersection(a.geom, b.geom)) AS "geom"
+                FROM 
+                    routeedges as a, 
+                    routeedges as b
+                WHERE
+                    a.id != b.id
+                    AND
+                    ST_Touches(a.geom, b.geom)
+            ),
+            preroutelines AS (
+                    SELECT
+                        (ST_Dump(ST_Split(geom, (SELECT geom FROM pointssplit)))).geom AS "geom"
+                    FROM
+                        routeline
+            ),
+            routelines AS (
+                    SELECT
+                        *
+                    FROM
+                        preroutelines
+                    UNION
+                    SELECT
+                        geom
+                    FROM routeline
+                    WHERE NOT EXISTS (
+                            SELECT
+                                *
+                            FROM
+                                preroutelines
+                    )
+            ),
+            routesteps AS (
+                SELECT 
+                    ROW_NUMBER () OVER (ORDER BY routeedges.name) AS "id",
+                    ((ST_Length(routelines.geom::geography)/1000) / routeedges.velocity) AS "hours",
+                    ST_Length(routelines.geom::geography)/1000 AS "distance_km",
+                    routeedges.name,
+                    routeedges.velocity,
+                    routeedges.seq,
+                    ST_AsText(routelines.geom) AS "wkt"
+                FROM routelines
+                INNER JOIN routeedges
+                ON 
+                    ST_Intersects(
+                        ST_Transform(
+                            ST_Buffer(routelines.geom::geography, 2, 'endcap=square join=round')::geometry, 
+                            %(srid)s
+                        ), 
+                        routeedges.geom
+                    ) 
+                    AND 
+                    NOT ST_Touches(routelines.geom, routeedges.geom)
             )
-            SELECT 
-                seq AS "id",
-                ((ST_Length(geom::geography)/1000) / velocity) AS "hours",
-                ST_Length(geom::geography)/1000 AS "distance_km",
-                name,
-                velocity,
-                seq,
-                ST_AsText(
-                    geom
-                ) AS "wkt"
-            FROM 
-                edges
-            ORDER BY seq;''').format(
+            SELECT * FROM routesteps ORDER BY seq;''').format(
                 routeSchemaName=sql.Identifier(routeSchemaName),
                 restrictionSchema=sql.Identifier(restrictionSchemaName),
                 restrictionTable=sql.Identifier(restrictionTableName)
