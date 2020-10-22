@@ -1,6 +1,7 @@
 import os
 from PyQt5 import QtWidgets, QtGui, QtCore, uic
 from route_mapping.widgets.widget import Widget
+from route_mapping.modules.utils.decorators import cursorwait
 
 class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
 
@@ -9,6 +10,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         uic.loadUi(self.getUiPath(), self)
         self.mediator = mediator
         self.loadButtonSettings()
+        self.loadInputSettings()
 
     def getUiPath(self):
         return os.path.join(
@@ -21,11 +23,17 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
     def closeEvent(self, e):
         self.getMediator().cleanGeneratorDockSettings()
         
+    def loadInputSettings(self):
+        doubleValidator =  QtGui.QDoubleValidator(0, 300, 6, self)
+        self.widthLe.setValidator(doubleValidator)
+        self.heightLe.setValidator(doubleValidator)
+        self.tonnageLe.setValidator(doubleValidator)
+
     def loadButtonSettings(self):
         for setting in self.getButtonSettings():
             self.setButtonSettings(
                 setting['button'],
-                setting['pathIcon'],
+                setting['iconPath'],
                 setting['toolTip']
             )
 
@@ -33,7 +41,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         return [
             {
                 'button': self.sourceCoordBtn,
-                'pathIcon': os.path.join(
+                'iconPath': os.path.join(
                     os.path.abspath(os.path.dirname(__file__)),
                     '..',
                     'icons',
@@ -43,7 +51,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             },
             {
                 'button': self.targetCoordBtn,
-                'pathIcon': os.path.join(
+                'iconPath': os.path.join(
                     os.path.abspath(os.path.dirname(__file__)),
                     '..',
                     'icons',
@@ -53,13 +61,13 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             },
             {
                 'button': self.configBtn,
-                'pathIcon': os.path.join(
+                'iconPath': os.path.join(
                     os.path.abspath(os.path.dirname(__file__)),
                     '..',
                     'icons',
                     'config.png'
                 ),
-                'toolTip': 'Obter ponto do mapa'
+                'toolTip': 'Configurações'
             }
         ]
 
@@ -94,33 +102,24 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             len(self.targetCoordLe.text().split(';')) == 2
         )
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.pyqtSlot()
+    @cursorwait
     def on_runBtn_clicked(self):
         if not self.isValidInput():
             self.showErrorMessageBox('Erro', 'Preencha todos os campos!')
             return
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         try:
             self.getMediator().buildRoute(
-                {
-                    'x': self.sourceCoordLe.text().split(';')[0],
-                    'y': self.sourceCoordLe.text().split(';')[1]
-                },
-                {
-                    'x': self.targetCoordLe.text().split(';')[0],
-                    'y': self.targetCoordLe.text().split(';')[1]
-                },
-                width=self.widthLe.text(),
-                heigth=self.widthLe.text(),
-                tonnage=self.tonnageLe.text(),
-                largeVehicle=self.largeVehicleCbx.isChecked()
+                (self.sourceCoordLe.text().split(';')[0], self.sourceCoordLe.text().split(';')[1]),
+                (self.targetCoordLe.text().split(';')[0], self.targetCoordLe.text().split(';')[1]),
+                (self.widthLe.text(), self.heightLe.text(), self.tonnageLe.text(), self.largeVehicleCbx.isChecked())
             )
-        except:
-            self.showErrorMessageBox('Erro', 'Rota não encontrada!')
-        finally:
-            QtWidgets.QApplication.restoreOverrideCursor()
-
-
+        except Exception as e:
+            self.showErrorMessageBox(
+                'Erro', 
+                'Rota não encontrada!'
+            )
+            
     def setRouteInfo(self, distance, time):
         self.routeInfoLb.setText('''
             <p><b>Distância total:</b> {km}{m}</p>

@@ -101,3 +101,6 @@ class QgisApi(IQgisApi):
 
     def unsetMapTool(self, tool):
         iface.mapCanvas().unsetMapTool(tool)
+
+    def addToolBar(self, name):
+        return iface.addToolBar(name)

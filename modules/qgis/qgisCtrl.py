@@ -57,3 +57,6 @@ class QgisCtrl(IQgisCtrl):
 
     def getMapFunction(self, functionName):
         return self.apiQGis.getMapFunction(functionName)
+
+    def addToolBar(self, name):
+        return self.apiQGis.addToolBar(name)

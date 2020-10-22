@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import sql
 from functools import wraps
 
 def transaction(func):
@@ -8,15 +9,16 @@ def transaction(func):
         conn = args[0].getConnection()
         cursor = conn.cursor()
         args.insert(1, cursor)
+        query = []
         try:
-            query = func(*args)
+            query = func(*args, **kwargs)
             conn.commit()
         except Exception as e:
             conn.rollback()
-            print("{} error: {}".format(func.__name__, e))
-        finally:
             cursor.close()
-            return query
+            raise Exception("{} error: {}".format(func.__name__, e))
+        cursor.close()
+        return query
     return inner
 
 def notransaction(func):
@@ -26,15 +28,14 @@ def notransaction(func):
         conn = args[0].getConnection()
         cursor = conn.cursor()
         args.insert(1, cursor)
+        query = []
         try:
-            query = func(*args)
-        except Exception as e:
-            print("{} error: {}".format(func.__name__, e))
-        finally:
-            cursor.close()
+            query = func(*args, **kwargs)
             return query
+        except Exception as e:
+            cursor.close()
+            raise Exception("{} error: {}".format(func.__name__, e))
     return inner
-
 
 class Postgres:
     
@@ -61,27 +62,36 @@ class Postgres:
         return self.connection
 
     @notransaction
-    def getNearestRoutingPoint(self, cursor, x, y, srid, edgeSchemaName, edgeTableName):
+    def getNearestRoutingPoint(self, cursor, point, srid, schemaName):
         cursor.execute(
-            '''WITH targetpoint AS (
-                SELECT ST_GeomFromText('POINT({x} {y})', {srid}) AS geom
-            )
-            SELECT 
-                id,
-                ST_LineLocatePoint(ST_Transform(geom, {srid}), (SELECT geom from targetpoint)) AS "position",
-                ST_AsText(ST_LineInterpolatePoint(ST_Transform(geom, {srid}), ST_LineLocatePoint(ST_Transform(geom, {srid}), (SELECT geom from targetpoint)))) AS "line_point",
-                ST_Transform(geom, {srid}) AS "line_wkt"
-            FROM 
-                {schema}.{table}
-            ORDER BY 
-                ST_Distance((SELECT geom from targetpoint), ST_LineInterpolatePoint(ST_Transform(geom, {srid}), ST_LineLocatePoint(ST_Transform(geom, {srid}), (SELECT geom from targetpoint)))) ASC
-            LIMIT 1;'''.format(
-                x=x,
-                y=y,
-                srid=srid,
-                schema=edgeSchemaName,
-                table=edgeTableName
-            )
+            sql.SQL(
+                '''WITH targetpoint AS (
+                    SELECT ST_GeomFromText('POINT(%(x)s %(y)s)', %(srid)s) AS geom
+                )
+                SELECT 
+                    id,
+                    ST_LineLocatePoint(ST_Transform(geom, %(srid)s), (SELECT geom from targetpoint)) AS "position",
+                    ST_AsText(ST_LineInterpolatePoint(ST_Transform(geom, %(srid)s), ST_LineLocatePoint(ST_Transform(geom, %(srid)s), (SELECT geom from targetpoint)))) AS "line_point",
+                    ST_Transform(geom, %(srid)s) AS "line_wkt"
+                FROM (
+                    SELECT 
+                        *,
+                        rgeom AS "geom"
+                    FROM
+                        {schema}.{table}
+                )  AS rotas_noded      
+                ORDER BY 
+                    ST_Distance((SELECT geom from targetpoint), ST_LineInterpolatePoint(ST_Transform(geom, %(srid)s), ST_LineLocatePoint(ST_Transform(geom, %(srid)s), (SELECT geom from targetpoint)))) ASC
+                LIMIT 1;'''
+            ).format(
+                schema=sql.Identifier(schemaName),
+                table=sql.Identifier('rotas_noded')
+            ),
+            {
+                'x': float(point[0]),
+                'y': float(point[1]),
+                'srid': srid
+            }
         )
         query = cursor.fetchall()[0]
         return (query[0], query[1],)
@@ -89,24 +99,22 @@ class Postgres:
     @notransaction
     def getRoute(self,
             cursor,
-            edgeSourceId,
-            edgeSourcePos,
-            edgeTargetId,
-            edgeTargetPos,
+            sourcePointEdgeInfo,
+            targetPointEdgeInfo,
             srid,
-            edgeSchemaName,
-            edgeTableName,
+            routeSchemaName,
             restrictionSchemaName,
             restrictionTableName,
             sourcePoint,
-            targetPoint
+            targetPoint,
+            vehicle
         ):
         cursor.execute(
-            '''WITH sourcepoint AS (
-                SELECT ST_GeomFromText('POINT({sourceX} {sourceY})', {srid}) AS "geom"
+            sql.SQL('''WITH sourcepoint AS (
+                SELECT ST_GeomFromText('POINT(%(sourceX)s %(sourceY)s)', %(srid)s) AS "geom"
             ),
             targetpoint AS (
-                SELECT ST_GeomFromText('POINT({targetX} {targetY})', {srid}) AS "geom"
+                SELECT ST_GeomFromText('POINT(%(targetX)s %(targetY)s)', %(srid)s) AS "geom"
             ),
             routeedges AS (
                 SELECT
@@ -114,24 +122,17 @@ class Postgres:
                     edge.name,
                     edge.velocity,
                     route.seq,
-                    ST_Transform(edge.geom, {srid}) AS "geom"
+                    ST_Transform(edge.rgeom, %(srid)s) AS "geom"
                 FROM (
                     SELECT
                         *
                     FROM 
                         pgr_trsp(
-                            'SELECT 
-                                id::INT4, 
-                                source::INT4, 
-                                target::INT4, 
-                                cost::FLOAT8, 
-                                reverse_cost::FLOAT8 
-                            FROM 
-                                {edgeSchema}.{edgeTable}', 
-                            {edgeSourceId}, 
-                            {edgeSourcePos}, 
-                            {edgeTargetId}, 
-                            {edgeTargetPos},
+                            %(edgeQuery)s, 
+                            %(edgeSourceId)s, 
+                            %(edgeSourcePos)s, 
+                            %(edgeTargetId)s, 
+                            %(edgeTargetPos)s,
                             TRUE,
                             TRUE, 
                             'SELECT 
@@ -147,7 +148,7 @@ class Postgres:
                     SELECT 
                         *
                     FROM 
-                        {edgeSchema}.{edgeTable}
+                        {routeSchemaName}.rotas_noded
                 ) AS edge
                 ON route.id2 = edge.id
             ),
@@ -231,151 +232,175 @@ class Postgres:
                     ST_Intersects(
                         ST_Transform(
                             ST_Buffer(routelines.geom::geography, 2, 'endcap=square join=round')::geometry, 
-                            {srid}
+                            %(srid)s
                         ), 
                         routeedges.geom
                     ) 
                     AND 
                     NOT ST_Touches(routelines.geom, routeedges.geom)
             )
-            SELECT * FROM routesteps ORDER BY seq;'''.format(
-                edgeSourceId=edgeSourceId,
-                edgeSourcePos=edgeSourcePos,
-                edgeTargetId=edgeTargetId,
-                edgeTargetPos=edgeTargetPos,
-                srid=srid,
-                edgeSchema=edgeSchemaName,
-                edgeTable=edgeTableName,
-                restrictionSchema=restrictionSchemaName,
-                restrictionTable=restrictionTableName,
-                sourceX=sourcePoint[0],
-                sourceY=sourcePoint[1],
-                targetX=targetPoint[0],
-                targetY=targetPoint[1]
-            )
+            SELECT * FROM routesteps ORDER BY seq;''').format(
+                routeSchemaName=sql.Identifier(routeSchemaName),
+                restrictionSchema=sql.Identifier(restrictionSchemaName),
+                restrictionTable=sql.Identifier(restrictionTableName)
+            ),
+            {
+                'edgeSourceId': int(sourcePointEdgeInfo[0]),
+                'edgeSourcePos': float(sourcePointEdgeInfo[1]),
+                'edgeTargetId': int(targetPointEdgeInfo[0]),
+                'edgeTargetPos': float(targetPointEdgeInfo[1]),
+                'srid': int(srid),
+                'sourceX': float(sourcePoint[0]),
+                'sourceY': float(sourcePoint[1]),
+                'targetX': float(targetPoint[0]),
+                'targetY': float(targetPoint[1]),
+                'edgeQuery': self.getEdgeQuery(routeSchemaName, *vehicle)
+            }
         )
         query = cursor.fetchall()
         return query
+
+    def getEdgeQuery(self, 
+            routeSchemaName, 
+            vehicleWidth, 
+            vehicleHeght, 
+            vehicleTonnage, 
+            isLargeVehicle
+        ):
+        return '''
+            SELECT 
+                id::INT4, 
+                source::INT4, 
+                target::INT4, 
+                cost::FLOAT8, 
+                reverse_cost::FLOAT8 
+            FROM 
+                {routeSchemaName}.rotas_noded
+            {where}
+            '''.format(
+                routeSchemaName=routeSchemaName,
+                where=self.getWhereEdgeQuery(vehicleWidth, vehicleHeght, vehicleTonnage, isLargeVehicle)
+            )
+
+    def getWhereEdgeQuery(self, 
+            vehicleWidth, 
+            vehicleHeght, 
+            vehicleTonnage, 
+            isLargeVehicle
+        ):
+        conditional = [
+            '(largura_maxima IS NULL OR largura_maxima > {0})'.format(vehicleWidth) if vehicleWidth else '',
+            '(altura_maxima IS NULL OR altura_maxima > {0})'.format(vehicleHeght) if vehicleHeght else '',
+            '(tonelagem_maxima IS NULL OR tonelagem_maxima > {0})'.format(vehicleTonnage) if vehicleTonnage else '',
+            '(proibido_caminhao IS FALSE)' if isLargeVehicle else ''
+        ]
+        conditional = ' AND '.join(list(filter(lambda row: True if row else False, conditional)))
+        return 'WHERE {}'.format(conditional) if conditional else ''
 
     @transaction
     def buildRouteStructure(self,
             cursor,
             routeSchemaName,
-            routeTableName,
-            edgeSchemaName,
-            edgeTableName
+            routeTableName
         ):
-        cursor.execute('''
-                SELECT pgr_nodeNetwork('edgv.rotas', 1e-8, the_geom:='geom');
-            '''.format(schema=routeSchemaName, table=routeTableName)
-        )
-        cursor.execute('''
-            SELECT 
-                pgr_createTopology('{schema}.{table}',1e-8, the_geom:='geom', clean := TRUE);
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            ALTER TABLE 
-                {schema}.{table} 
-            ADD COLUMN IF NOT EXISTS 
-                distance FLOAT8;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            UPDATE 
-                {schema}.{table}
-            SET 
-                distance = ST_Length(ST_Transform(geom, 4674)::geography) / 1000;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            ALTER TABLE 
-                {schema}.{table} 
-            ADD COLUMN IF NOT EXISTS 
-                velocity INT4;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            UPDATE {edgeSchema}.{edgeTable} SET velocity = 
-                CASE
-                    WHEN old.limitevelocidade IS NOT NULL 
-                    THEN old.limitevelocidade
-                    ELSE 60
-                END
-            FROM 
-                {routeSchema}.{routeTable} as old
-            WHERE 
-                {edgeSchema}.{edgeTable}.old_id = old.id;
-            '''.format(
-                edgeSchema=edgeSchemaName, 
-                edgeTable=edgeTableName,
-                routeSchema=routeSchemaName, 
-                routeTable=routeTableName
-            )
-        )
-        cursor.execute('''
-                ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS time FLOAT8;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS cost FLOAT8;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            UPDATE {schema}.{table} SET cost = distance/velocity;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS bidirecional boolean;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
+        cursor.execute(
+            sql.SQL(
+                ''' DROP TABLE IF EXISTS {routeSchema}.{tmpRouteTable};
+                DROP TABLE IF EXISTS {routeSchema}.{edgeTable};
+                CREATE TABLE {routeSchema}.{tmpRouteTable} AS 
+                SELECT 
+                    *, 
+                    ST_LineMerge(geom) AS "rgeom" 
+                FROM 
+                    {routeSchema}.{routeTable};
+                SELECT pgr_nodeNetwork(%(nodeparameter)s, 1e-8, the_geom:='rgeom');
+                SELECT pgr_createTopology(%(topoparameter)s,1e-8, the_geom:='rgeom', clean:=TRUE);
+                ALTER TABLE 
+                    {routeSchema}.{edgeTable}
+                ADD COLUMN IF NOT EXISTS 
+                    distance FLOAT8;
                 UPDATE 
-                    {edgeSchema}.{edgeTable} AS noded
+                    {routeSchema}.{edgeTable}
+                SET 
+                    distance = ST_Length(ST_Transform(rgeom, 4674)::geography) / 1000;
+                ALTER TABLE 
+                    {routeSchema}.{edgeTable}
+                ADD COLUMN IF NOT EXISTS 
+                    velocity INT4;
+                UPDATE {routeSchema}.{edgeTable} SET velocity = 
+                    CASE
+                        WHEN old.limitevelocidade IS NOT NULL 
+                        THEN old.limitevelocidade
+                        ELSE 60
+                    END
+                FROM 
+                    {routeSchema}.{routeTable} as old
+                WHERE 
+                    {routeSchema}.{edgeTable}.old_id = old.id;
+                ALTER TABLE 
+                    {routeSchema}.{edgeTable} 
+                ADD COLUMN IF NOT EXISTS time FLOAT8;
+                ALTER TABLE 
+                    {routeSchema}.{edgeTable}
+                ADD COLUMN IF NOT EXISTS cost FLOAT8;
+                UPDATE {routeSchema}.{edgeTable} SET cost = distance/velocity;
+                ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS bidirecional boolean;
+                UPDATE 
+                    {routeSchema}.{edgeTable} AS noded
                 SET 
                     bidirecional = trecho.bidirecional
                 FROM 
-                    {routeSchema}.{routeTable} AS trecho 
+                    {routeSchema}.{tmpRouteTable} AS trecho 
                 WHERE 
                     noded.old_id = trecho.id;
-            '''.format(
-                edgeSchema=edgeSchemaName, 
-                edgeTable=edgeTableName,
-                routeSchema=routeSchemaName, 
-                routeTable=routeTableName
-            )
-        )
-        cursor.execute('''
-            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS reverse_cost FLOAT8;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            UPDATE 
-                {schema}.{table} as noded
-            SET 
-                reverse_cost = 
-                    CASE
-                        WHEN noded.bidirecional = TRUE 
-                        THEN noded.cost
-                        ELSE -1
-                    END
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
+                ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS reverse_cost FLOAT8;
+                UPDATE 
+                    {routeSchema}.{edgeTable} as noded
+                SET 
+                    reverse_cost = 
+                        CASE
+                            WHEN noded.bidirecional = TRUE 
+                            THEN noded.cost
+                            ELSE -1
+                        END;
+                ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS name TEXT;
+                UPDATE 
+                    {routeSchema}.{edgeTable} AS noded
+                SET 
+                    name = (SELECT nome FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
 
-        cursor.execute('''
-            ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS name FLOAT8;
-            '''.format(schema=edgeSchemaName, table=edgeTableName)
-        )
-        cursor.execute('''
-            UPDATE 
-                {edgeSchema}.{edgeTable} AS noded
-            SET 
-                name = (SELECT nome FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
-            '''.format(
-                edgeSchema=edgeSchemaName, 
-                edgeTable=edgeTableName,
-                routeSchema=routeSchemaName, 
-                routeTable=routeTableName
-            )
+                ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS largura_maxima FLOAT8;
+                UPDATE 
+                    {routeSchema}.{edgeTable} AS noded
+                SET 
+                    name = (SELECT largura_maxima FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+
+                ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS altura_maxima FLOAT8;
+                UPDATE 
+                    {routeSchema}.{edgeTable} AS noded
+                SET 
+                    name = (SELECT altura_maxima FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+
+                ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS tonelagem_maxima FLOAT8;
+                UPDATE 
+                    {routeSchema}.{edgeTable} AS noded
+                SET 
+                    name = (SELECT tonelagem_maxima FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+
+                ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS proibido_caminhao BOOLEAN;
+                UPDATE 
+                    {routeSchema}.{edgeTable} AS noded
+                SET 
+                    name = (SELECT proibido_caminhao FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                ''').format(
+                routeSchema=sql.Identifier(routeSchemaName),
+                routeTable=sql.Identifier(routeTableName),
+                tmpRouteTable=sql.Identifier('rotas'),
+                edgeTable=sql.Identifier('rotas_noded'),
+            ),{
+                'nodeparameter': '{}.rotas'.format(routeSchemaName),
+                'topoparameter': '{}.rotas_noded'.format(routeSchemaName)
+            }
+            
         )
         return True

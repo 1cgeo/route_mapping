@@ -32,8 +32,6 @@ class BuildRouteStructure(MapFunction):
     def run(self,
             routeSchema,
             routeTable,
-            edgeSchema,
-            edgeTable,
             dbName,
             dbHost,
             dbPort,
@@ -48,12 +46,7 @@ class BuildRouteStructure(MapFunction):
             dbUser,
             dbPass,
         )
-        return database.buildRouteStructure(
-            routeSchema,
-            routeTable,
-            edgeSchema,
-            edgeTable
-        )
+        return database.buildRouteStructure(routeSchema, routeTable)
       
         
 

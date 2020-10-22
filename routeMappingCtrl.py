@@ -12,7 +12,7 @@ class RouteMappingCtrl:
     def __init__(self,
             qgis,
             messageFactory,
-            guiFactory=GuiFactory()
+            guiFactory=GuiFactory(),
         ):
         self.qgis = qgis
         self.messageFactory = messageFactory
@@ -21,7 +21,12 @@ class RouteMappingCtrl:
         self.routeGeneratorDock = None
         self.captureSourceCoordTool = None
         self.captureTargetCoordTool = None
+        self.pluginToolBar = None
+        self.pluginToolBar = self.qgis.addToolBar("Ferramentas de Rotas")
         self.routeGeneratorDock = self.guiFactory.getWidget('RouteGeneratorDock', mediator=self)
+
+    def getRouteGeneratorDock(self):
+        return self.routeGeneratorDock
 
     def showInfoMessageBox(self, parent, title, message):
         messageDlg = self.messageFactory.createMessage('InfoMessageBox')
@@ -38,36 +43,41 @@ class RouteMappingCtrl:
     def loadPlugin(self):
         for actionSettings in self.getActionSettings():
             action = self.qgis.createAction(
-                actionSettings['name'],
+                actionSettings['toolTip'],
                 actionSettings['iconPath'],
                 actionSettings['callback']
             )
-            self.qgis.addActionDigitizeToolBar(action)
+            self.pluginToolBar.addAction(action)
             self.actions.append(action)
 
     def getActionSettings(self):
         return [
             {
-                'name': 'Gerador de rotas',
+                'toolTip': 'Gerador de rotas',
                 'iconPath':os.path.join(self.ROOT_PATH_ICON, 'route.png'),
                 'callback': self.showRouteGeneratorDock
             },
             {
-                'name': 'Restrição de rota',
+                'toolTip': 'Restrição de rota',
                 'iconPath':os.path.join(self.ROOT_PATH_ICON, 'turnRestriction.png'),
                 'callback': self.activeCreateRelationshipTool
             },
             {
-                'name': 'Gerar estrutura de rotas',
+                'toolTip': 'Gerar rede de rotas',
                 'iconPath':os.path.join(self.ROOT_PATH_ICON, 'transform.png'),
-                'callback': self.createRouteStructure
+                'callback': self.createRouteNetwork
+            },
+            {
+                'toolTip': 'Configurações',
+                'iconPath':os.path.join(self.ROOT_PATH_ICON, 'config.png'),
+                'callback': self.showConfigDialog
             }
         ]
 
     def unloadPlugin(self):
         self.qgis.activeTool('CreateRelationship', unsetTool=True)
         self.cleanGeneratorDockSettings()
-        [self.qgis.removeActionDigitizeToolBar(action) for action in self.actions ]
+        self.pluginToolBar.close()
 
     def activeCreateRelationshipTool(self):
         if not self.validateSettings():
@@ -76,8 +86,8 @@ class RouteMappingCtrl:
         settings = {
             'maxSelection': 2,
             'layer': {
-                'schema': routeSettings['edgeSchema'],
-                'name': routeSettings['edgeTable'],
+                'schema': routeSettings['routeSchema'],
+                'name': 'rotas_noded',
                 'fieldName': 'id'
             }, 
             'relationship': {
@@ -94,6 +104,7 @@ class RouteMappingCtrl:
     def cleanGeneratorDockSettings(self):
         self.captureSourceCoordTool.resetRubberBand() if self.captureSourceCoordTool else ''
         self.captureTargetCoordTool.resetRubberBand() if self.captureTargetCoordTool else ''
+        self.routeGeneratorDock.close()
 
     def activeCaptureSourceCoordinates(self, setCoordinate):
         if self.captureSourceCoordTool:
@@ -126,31 +137,29 @@ class RouteMappingCtrl:
     def buildRoute(self, 
             sourcePoint, 
             targetPoint, 
-            width,
-            heigth,
-            tonnage,
-            largeVehicle
+            vehicle
         ):
         if not self.validateSettings():
-            return
+                return
         buildRoute = self.qgis.getMapFunction('BuildRoute')
         routeSettings = self.getRouteSettings()
         route = buildRoute.run(
-            sourcePoint['x'],
-            sourcePoint['y'],
-            targetPoint['x'],
-            targetPoint['y'],
-            routeSettings['edgeSchema'],
-            routeSettings['edgeTable'],
+            sourcePoint,
+            targetPoint,
+            routeSettings['routeSchema'],
             routeSettings['restrictionSchema'],
             routeSettings['restrictionTable'],
-            routeSettings['dbName'], 
-            routeSettings['dbHost'], 
-            routeSettings['dbPort'], 
-            routeSettings['dbUser'], 
-            routeSettings['dbPass']
+            (
+                routeSettings['dbName'], 
+                routeSettings['dbHost'], 
+                routeSettings['dbPort'], 
+                routeSettings['dbUser'], 
+                routeSettings['dbPass']
+            ),
+            vehicle
         )
         self.showRouteInfo(route)
+
 
     def showRouteInfo(self, route):
         self.routeGeneratorDock.removeAllRouteSteps()
@@ -162,7 +171,7 @@ class RouteMappingCtrl:
         def formatTime(totalHours):
             hours = int(totalHours)
             minutes = int(getNumberDecimal(totalHours)*60) 
-            seconds = int(getNumberDecimal(totalHours)*60*60)
+            seconds = int(getNumberDecimal(getNumberDecimal(totalHours)*60)*60)
             return (hours, minutes, seconds)
         totalKm = 0
         totalHours = 0
@@ -192,12 +201,15 @@ class RouteMappingCtrl:
     def hasRouteSettings(self):
         return self.getRouteSettings()
 
+    def getRouteSettingsKey(self):
+        return 'routeSettings:v2'
+
     def getRouteSettings(self):
-        routeSettings = self.qgis.getSettingsVariable('routeSettings:v1')
+        routeSettings = self.qgis.getSettingsVariable(self.getRouteSettingsKey())
         return json.loads(routeSettings) if routeSettings else {}
 
     def setRouteSettings(self, routeSettings):
-        self.qgis.setSettingsVariable('routeSettings:v1', json.dumps(routeSettings))
+        self.qgis.setSettingsVariable(self.getRouteSettingsKey(), json.dumps(routeSettings))
         
     def showConfigDialog(self):
         configDialog = self.guiFactory.getWidget('ConfigDialog', mediator=self)
@@ -206,13 +218,14 @@ class RouteMappingCtrl:
             return
         self.setRouteSettings(configDialog.dump())
         
-    def createRouteStructure(self, b):
+    def createRouteNetwork(self, b):
         if not self.validateSettings():
             return
         if not self.showQuestionMessageBox(
                 self.qgis.getMainWindow(),
                 'Aviso',
-                'Gerar nova estrutura de rotas?'
+                '''<p>Gerar uma rede de rotas?</p>
+                  <p style="color:red">Atenção: caso já exista uma rede de rotas ela será deletada.</p>'''
             ):
             return
         buildRouteStructure = self.qgis.getMapFunction('BuildRouteStructure')
@@ -220,8 +233,6 @@ class RouteMappingCtrl:
         success = buildRouteStructure.run(
             routeSettings['routeSchema'],
             routeSettings['routeTable'],
-            routeSettings['edgeSchema'],
-            routeSettings['edgeTable'],
             routeSettings['dbName'], 
             routeSettings['dbHost'], 
             routeSettings['dbPort'], 
@@ -232,6 +243,6 @@ class RouteMappingCtrl:
         messageBox(
             self.qgis.getMainWindow(),
             'Aviso' if success else 'Erro',
-            'Estrutura gerada com sucesso!' if success else 'Erro ao gerar estrutura!'
+            'Rede gerada com sucesso!' if success else 'Erro ao gerar rede!'
         )
         

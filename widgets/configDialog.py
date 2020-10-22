@@ -16,8 +16,6 @@ class ConfigDialog(QtWidgets.QDialog, Widget):
             'dbPass': self.dbPassLe,
             'routeSchema': self.routeSchemaLe,
             'routeTable': self.routeTableLe,
-            'edgeSchema': self.edgeSchemaLe,
-            'edgeTable': self.edgeTableLe,
             'restrictionSchema': self.restrictionSchemaLe,
             'restrictionTable': self.restrictionTableLe
         }

@@ -47,44 +47,6 @@
       <string>Banco de dados:</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="dbNameLe">
-        <property name="echoMode">
-         <enum>QLineEdit::Normal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="label_10">
-        <property name="text">
-         <string>Schema de rotas:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QLineEdit" name="dbHostLe">
-        <property name="echoMode">
-         <enum>QLineEdit::Normal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="dbUserLe"/>
-      </item>
-      <item row="9" column="0">
-       <widget class="QLabel" name="label_8">
-        <property name="text">
-         <string>Schema de restrição de rota:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>Banco de dados:</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
@@ -92,47 +54,17 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="1">
-       <widget class="QLineEdit" name="restrictionSchemaLe"/>
-      </item>
-      <item row="10" column="0">
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>Tabela de restrição de rota:</string>
-        </property>
-       </widget>
-      </item>
       <item row="7" column="0">
-       <widget class="QLabel" name="label_3">
+       <widget class="QLabel" name="label_8">
         <property name="text">
-         <string>Schema de arestas:</string>
+         <string>Schema de restrição de rota:</string>
         </property>
        </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>Host:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="1">
-       <widget class="QLineEdit" name="edgeTableLe"/>
-      </item>
-      <item row="10" column="1">
-       <widget class="QLineEdit" name="restrictionTableLe"/>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
          <string>Senha:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>Porta:</string>
         </property>
        </widget>
       </item>
@@ -146,6 +78,36 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="dbUserLe"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Banco de dados:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="dbHostLe">
+        <property name="echoMode">
+         <enum>QLineEdit::Normal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1">
+       <widget class="QLineEdit" name="restrictionTableLe"/>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>Schema de rodóvias:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QLineEdit" name="routeTableLe"/>
+      </item>
       <item row="4" column="1">
        <widget class="QLineEdit" name="dbPortLe">
         <property name="echoMode">
@@ -153,26 +115,44 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
-       <widget class="QLabel" name="label_4">
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>Tabela de arestas:</string>
+         <string>Host:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Porta:</string>
         </property>
        </widget>
       </item>
       <item row="7" column="1">
-       <widget class="QLineEdit" name="edgeSchemaLe"/>
-      </item>
-      <item row="5" column="1">
-       <widget class="QLineEdit" name="routeSchemaLe"/>
-      </item>
-      <item row="6" column="1">
-       <widget class="QLineEdit" name="routeTableLe"/>
+       <widget class="QLineEdit" name="restrictionSchemaLe"/>
       </item>
       <item row="6" column="0">
        <widget class="QLabel" name="label_11">
         <property name="text">
-         <string>Tabela de rotas:</string>
+         <string>Tabela de rodóvias:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Tabela de restrição de rota:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QLineEdit" name="routeSchemaLe"/>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="dbNameLe">
+        <property name="echoMode">
+         <enum>QLineEdit::Normal</enum>
         </property>
        </widget>
       </item>
@@ -189,8 +169,8 @@
   <tabstop>dbNameLe</tabstop>
   <tabstop>dbHostLe</tabstop>
   <tabstop>dbPortLe</tabstop>
-  <tabstop>edgeSchemaLe</tabstop>
-  <tabstop>edgeTableLe</tabstop>
+  <tabstop>routeSchemaLe</tabstop>
+  <tabstop>routeTableLe</tabstop>
   <tabstop>restrictionSchemaLe</tabstop>
   <tabstop>restrictionTableLe</tabstop>
  </tabstops>

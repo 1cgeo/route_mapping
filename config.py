@@ -1,5 +1,5 @@
 class Config:
 
-    NAME = 'Restrição de rota'
+    NAME = 'Ferramentas de Roteamento'
 
     VERSION = '0.0.0'

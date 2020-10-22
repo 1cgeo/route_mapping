@@ -10,15 +10,13 @@ from route_mapping.routeMappingCtrl import RouteMappingCtrl
 
 class Main(QObject):
 
-    
-
     def __init__(self, iface):
         super(Main, self).__init__()
         self.plugin_dir = os.path.dirname(__file__)
         self.qgis = QgisCtrl()
         self.routeMappingCtrl = RouteMappingCtrl(
             qgis=self.qgis,
-            messageFactory=UtilsFactory().createMessageFactory()
+            messageFactory=UtilsFactory().createMessageFactory(),
         )
 
     def initGui(self):

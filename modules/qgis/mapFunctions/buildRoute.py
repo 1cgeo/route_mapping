@@ -15,54 +15,36 @@ class BuildRoute(MapFunction):
         self.databaseFactory = databaseFactory
 
     def run(self, 
-            sourceX,
-            sourceY,
-            targetX,
-            targetY,
-            edgeSchema,
-            edgeTable,
+            sourcePoint,
+            targetPoint,
+            routeSchema,
             restrictionSchema,
             restrictionTable,
-            dbName,
-            dbHost,
-            dbPort,
-            dbUser,
-            dbPass
+            dbConnection,
+            vehicle
         ):
         srid = iface.mapCanvas().mapSettings().destinationCrs().postgisSrid()
-        database = self.databaseFactory.createPostgres(
-            dbName,
-            dbHost,
-            dbPort,
-            dbUser,
-            dbPass,
-        )
-        sourcetId, sourcePos = database.getNearestRoutingPoint(
-            sourceX,
-            sourceY,
+        database = self.databaseFactory.createPostgres(*dbConnection)
+        sourcePointEdgeInfo = database.getNearestRoutingPoint(
+            sourcePoint,
             srid,
-            edgeSchema,
-            edgeTable
+            routeSchema
         )
-        targetId, targetPos = database.getNearestRoutingPoint(
-            targetX,
-            targetY,
+        targetPointEdgeInfo = database.getNearestRoutingPoint(
+            targetPoint,
             srid,
-            edgeSchema,
-            edgeTable
+            routeSchema
         )
         route = database.getRoute(
-            sourcetId, 
-            sourcePos,
-            targetId, 
-            targetPos,
+            sourcePointEdgeInfo,
+            targetPointEdgeInfo,
             srid,
-            edgeSchema,
-            edgeTable,
+            routeSchema,
             restrictionSchema,
             restrictionTable,
-            (sourceX, sourceY),
-            (targetX, targetY)
+            sourcePoint,
+            targetPoint,
+            vehicle
         )
         self.exportToMemoryLayer(route, srid)
         return route
