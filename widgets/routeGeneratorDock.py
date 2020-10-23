@@ -117,7 +117,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         except Exception as e:
             self.showErrorMessageBox(
                 'Erro', 
-                'Rota não encontrada!'
+                'Erro na criação da rota'
             )
             
     def setRouteInfo(self, distance, time):
