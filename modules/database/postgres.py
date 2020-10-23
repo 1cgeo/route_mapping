@@ -249,7 +249,7 @@ class Postgres:
                     routeedges.seq,
                     ST_AsText(routelines.geom) AS "wkt"
                 FROM routelines
-                LEFT JOIN routeedges
+                INNER JOIN routeedges
                 ON 
                     ST_Intersects(
                         ST_Transform(
