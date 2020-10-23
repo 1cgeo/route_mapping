@@ -166,12 +166,7 @@ class Postgres:
                         )
                     ORDER BY seq
                 ) AS route
-                LEFT JOIN (
-                    SELECT 
-                        *
-                    FROM 
-                        {routeSchemaName}.rotas_noded
-                ) AS edge
+                INNER JOIN {routeSchemaName}.rotas_noded AS edge
                 ON route.id2 = edge.id
             ),
             routeline AS (
@@ -229,37 +224,40 @@ class Postgres:
                     FROM
                         preroutelines
                     UNION
-                    SELECT
-                        geom
-                    FROM routeline
+                        SELECT
+                            geom
+                        FROM routeline
                     WHERE NOT EXISTS (
-                            SELECT
-                                *
-                            FROM
-                                preroutelines
+                        SELECT
+                            *
+                        FROM
+                            preroutelines
                     )
             ),
             routesteps AS (
-                SELECT 
-                    routeedges.seq AS "id",
-                    ((ST_Length(routelines.geom::geography)/1000) / routeedges.velocity) AS "hours",
-                    ST_Length(routelines.geom::geography)/1000 AS "distance_km",
-                    routeedges.name,
-                    routeedges.velocity,
-                    routeedges.seq,
-                    ST_AsText(routelines.geom) AS "wkt"
-                FROM routelines
-                INNER JOIN routeedges
-                ON 
-                    ST_Intersects(
-                        ST_Transform(
-                            ST_Buffer(routelines.geom::geography, 2, 'endcap=square join=round')::geometry, 
-                            %(srid)s
-                        ), 
-                        routeedges.geom
-                    )
+                SELECT
+                    ROW_NUMBER() OVER(PARTITION BY geom ORDER BY seq asc) AS "row",
+                    *
+                FROM (
+                    SELECT
+                        routeedges.seq,
+                        routeedges.velocity,
+                        routeedges.name,
+                        routelines.geom
+                    FROM routelines
+                    INNER JOIN routeedges
+                    ON 
+                        ST_Intersects( routelines.geom, routeedges.geom)
+                ) AS a
             )
-            SELECT * FROM routesteps ORDER BY seq;''').format(
+            SELECT
+                seq,
+                ((ST_Length(geom::geography)/1000) / velocity) AS "hours",
+                ST_Length(geom::geography)/1000 AS "distance_km",
+                name,
+                velocity,
+                ST_AsText(geom) AS "wkt"
+            FROM routesteps WHERE row = 1 ORDER BY seq;''').format(
                 routeSchemaName=sql.Identifier(routeSchemaName),
                 restrictionSchema=sql.Identifier(restrictionSchemaName),
                 restrictionTable=sql.Identifier(restrictionTableName)
