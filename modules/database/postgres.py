@@ -241,7 +241,7 @@ class Postgres:
             ),
             routesteps AS (
                 SELECT 
-                    ROW_NUMBER () OVER (ORDER BY routeedges.name) AS "id",
+                    routeedges.seq AS "id",
                     ((ST_Length(routelines.geom::geography)/1000) / routeedges.velocity) AS "hours",
                     ST_Length(routelines.geom::geography)/1000 AS "distance_km",
                     routeedges.name,
@@ -249,7 +249,7 @@ class Postgres:
                     routeedges.seq,
                     ST_AsText(routelines.geom) AS "wkt"
                 FROM routelines
-                INNER JOIN routeedges
+                LEFT JOIN routeedges
                 ON 
                     ST_Intersects(
                         ST_Transform(
@@ -257,9 +257,7 @@ class Postgres:
                             %(srid)s
                         ), 
                         routeedges.geom
-                    ) 
-                    AND 
-                    NOT ST_Touches(routelines.geom, routeedges.geom)
+                    )
             )
             SELECT * FROM routesteps ORDER BY seq;''').format(
                 routeSchemaName=sql.Identifier(routeSchemaName),
