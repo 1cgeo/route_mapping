@@ -314,12 +314,8 @@ class Postgres:
         )
 
     def getVelocityExpression(self, vehicleMaxSpeed, isLargeVehicle):
-        v = 'LEAST(limitevelocidade, {0})'.format(vehicleMaxSpeed) if vehicleMaxSpeed else 'limitevelocidade'
-        return (
-            'COALESCE(limitevelocidadeveiculospesados, {0}, 60)'.format(v) 
-            if isLargeVehicle 
-            else 'COALESCE({0}, 60)'.format(v)
-        )
+        v = 'COALESCE(limitevelocidadeveiculospesados, limitevelocidade, 60)' if isLargeVehicle else 'COALESCE(limitevelocidade, 60)'
+        return 'LEAST({0}, {1})'.format(v, vehicleMaxSpeed) if vehicleMaxSpeed else v
 
     def getEdgeQuery(self, 
             routeSchemaName, 
