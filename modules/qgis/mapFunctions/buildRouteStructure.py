@@ -46,7 +46,7 @@ class BuildRouteStructure(MapFunction):
             dbUser,
             dbPass,
         )
-        return database.buildRouteStructure(routeSchema, routeTable)
+        return database.buildRouteStructure(srid, routeSchema, routeTable)
       
         
 

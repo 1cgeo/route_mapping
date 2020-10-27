@@ -18,6 +18,7 @@ class BuildRoute(MapFunction):
             sourcePoint,
             targetPoint,
             routeSchema,
+            routeTable,
             restrictionSchema,
             restrictionTable,
             dbConnection,
@@ -46,17 +47,46 @@ class BuildRoute(MapFunction):
             targetPoint,
             vehicle
         )
-        self.exportToMemoryLayer(route, srid)
+        valueMaps = database.getAttributeValueMap(routeTable, routeSchema)
+        self.exportToMemoryLayer(
+            route, 
+            srid,
+            valueMaps
+        )
         return route
 
-    def exportToMemoryLayer(self, route, srid):
-        vectorLyr =  core.QgsVectorLayer('LineString?crs=epsg:{0}&field=id:int'.format(srid), 'rota' , "memory")
+    def getMemoryLayerFieldsUrl(self):
+        fields = [
+            ('id', 'int'),
+            ('nome', 'string'),
+            ('sigla', 'string'),
+            ('pavimentacao', 'string'),
+            ('faixas', 'string'),
+            ('velocidade', 'double'),
+            ('observacao', 'string')
+        ]
+        return '&field='+'&field='.join([ '{0}:{1}'.format(row[0], row[1]) for row in fields])
+
+    def exportToMemoryLayer(self, route, srid, valueMaps):
+        vectorLyr =  core.QgsVectorLayer(
+            'LineString?crs=epsg:{0}{1}'.format(srid, self.getMemoryLayerFieldsUrl()), 'rota' , "memory"
+        )
         vl = core.QgsProject().instance().addMapLayer(vectorLyr)
         vl.startEditing()
         feat = core.QgsFeature(vl.fields())
+        pavingValueMap = [ valueMap for valueMap in valueMaps if valueMap['attribute'] == 'tipopavimentacao']
+        pavingValueMap = pavingValueMap[0]['valueMap'] if pavingValueMap else {}
+        getPavingValue = lambda code, valueMap=pavingValueMap: list(pavingValueMap.keys())[list(pavingValueMap.values()).index(code)]
         for step in route:
-            feat.setAttribute('id', step[0])
-            feat.setGeometry(QgsGeometry.fromWkt(step[-1]))
+            step['paving'] = getPavingValue(step['paving']).split('(')[0].strip()
+            feat.setAttribute('id', step['seq'])
+            feat.setAttribute('nome', step['name'])
+            feat.setAttribute('sigla', step['initials'])
+            feat.setAttribute('pavimentacao', step['paving'])
+            feat.setAttribute('faixas', step['tracks'])
+            feat.setAttribute('velocidade', step['velocity'])
+            feat.setAttribute('observacao', step['note'])
+            feat.setGeometry(QgsGeometry.fromWkt(step['wkt']))
             vl.addFeature(feat)
         vl.commitChanges()
 

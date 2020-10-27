@@ -48,7 +48,7 @@ class  GetClickCoordinates(QgsMapToolIdentify, MapTool):
             iface.mapCanvas(), 
             geometryType = core.QgsWkbTypes.PointGeometry
         )
-        self.rubberBand.setSvgIcon(self.getSettings()['svgIconPath'], QPoint(-24, -48))
+        self.rubberBand.setSvgIcon(self.getSettings()['svgIconPath'], QPoint(-12.5, -48))
         iface.mapCanvas().refresh()
 
     def execute(self, qgsPoint):

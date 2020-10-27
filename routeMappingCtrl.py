@@ -86,13 +86,13 @@ class RouteMappingCtrl:
         settings = {
             'maxSelection': 2,
             'layer': {
-                'schema': routeSettings['routeSchema'],
-                'name': 'rotas_noded',
+                'schema': 'edgv',
+                'name': 'rot_trecho_rede_rodoviaria_l',
                 'fieldName': 'id'
             }, 
             'relationship': {
-                'schema': routeSettings['restrictionSchema'],
-                'name': routeSettings['restrictionTable'],
+                'schema': 'edgv',
+                'name': 'rot_restricao',
                 'fieds': [ 'id_1', 'id_2']
             }
         }
@@ -115,7 +115,7 @@ class RouteMappingCtrl:
             'svgIconPath': os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
                 'icons',
-                'sourcePoint.svg'
+                'sourcePointMarker.svg'
             )
         }
         self.captureSourceCoordTool = self.qgis.activeTool('GetClickCoordinates', settings=settings)
@@ -129,7 +129,7 @@ class RouteMappingCtrl:
             'svgIconPath': os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
                 'icons',
-                'targetPoint.svg'
+                'targetPointMarker.svg'
             )
         }
         self.captureTargetCoordTool = self.qgis.activeTool('GetClickCoordinates', settings=settings)
@@ -146,9 +146,10 @@ class RouteMappingCtrl:
         route = buildRoute.run(
             sourcePoint,
             targetPoint,
-            routeSettings['routeSchema'],
-            routeSettings['restrictionSchema'],
-            routeSettings['restrictionTable'],
+            'edgv',
+            'rot_trecho_rede_rodoviaria_l',
+            'edgv',
+            'rot_restricao',
             (
                 routeSettings['dbName'], 
                 routeSettings['dbHost'], 
@@ -176,12 +177,21 @@ class RouteMappingCtrl:
         totalKm = 0
         totalHours = 0
         for step in route:
-            name = step[3]
-            hours = step[1]
+            name = step['name']
+            hours = step['hours'] if step['hours'] else 0
             time = formatTime(hours)
-            km = step[2]
+            km = step['distancekm'] if step['distancekm'] else 0
             distance = formatDistance(km)
-            self.routeGeneratorDock.addRouteStepInfo(name, distance, time)
+            self.routeGeneratorDock.addRouteStepInfo(
+                name, 
+                distance, 
+                time,
+                step['initials'], 
+                step['paving'], 
+                step['tracks'], 
+                step['velocity'], 
+                step['note']
+            )
             totalKm += km
             totalHours += hours
         distance = formatDistance(totalKm)
@@ -214,9 +224,7 @@ class RouteMappingCtrl:
     def showConfigDialog(self):
         configDialog = self.guiFactory.getWidget('ConfigDialog', mediator=self)
         configDialog.load(self.getRouteSettings()) if self.hasRouteSettings() else ''
-        if not configDialog.exec_():
-            return
-        self.setRouteSettings(configDialog.dump())
+        configDialog.showUp()
         
     def createRouteNetwork(self, b):
         if not self.validateSettings():
@@ -231,8 +239,8 @@ class RouteMappingCtrl:
         buildRouteStructure = self.qgis.getMapFunction('BuildRouteStructure')
         routeSettings = self.getRouteSettings()
         success = buildRouteStructure.run(
-            routeSettings['routeSchema'],
-            routeSettings['routeTable'],
+            'edgv',
+            'rot_trecho_rede_rodoviaria_l',
             routeSettings['dbName'], 
             routeSettings['dbHost'], 
             routeSettings['dbPort'], 

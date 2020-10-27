@@ -13,12 +13,12 @@ class ConfigDialog(QtWidgets.QDialog, Widget):
             'dbName': self.dbNameLe,
             'dbHost': self.dbHostLe,
             'dbPort': self.dbPortLe,
-            'dbPass': self.dbPassLe,
-            'routeSchema': self.routeSchemaLe,
-            'routeTable': self.routeTableLe,
-            'restrictionSchema': self.restrictionSchemaLe,
-            'restrictionTable': self.restrictionTableLe
+            'dbPass': self.dbPassLe
         }
+
+    def showUp(self):
+        self.show()
+        self.activateWindow()
 
     def getUiPath(self):
         return os.path.join(
@@ -57,5 +57,6 @@ class ConfigDialog(QtWidgets.QDialog, Widget):
     def on_saveBtn_clicked(self):
         if self.isValidInput():
             self.accept()
+            self.getMediator().setRouteSettings(self.dump())
             return
         self.showErrorMessageBox('Erro', 'Preencha todos os campos!')

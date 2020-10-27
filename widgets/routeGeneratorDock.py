@@ -28,6 +28,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         self.widthLe.setValidator(doubleValidator)
         self.heightLe.setValidator(doubleValidator)
         self.tonnageLe.setValidator(doubleValidator)
+        self.maximumSpeedLe.setValidator(doubleValidator)
 
     def loadButtonSettings(self):
         for setting in self.getButtonSettings():
@@ -58,16 +59,6 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
                     'targetPoint.svg'
                 ),
                 'toolTip': 'Obter ponto do mapa'
-            },
-            {
-                'button': self.configBtn,
-                'iconPath': os.path.join(
-                    os.path.abspath(os.path.dirname(__file__)),
-                    '..',
-                    'icons',
-                    'config.png'
-                ),
-                'toolTip': 'Configurações'
             }
         ]
 
@@ -78,10 +69,6 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
 
     def getMediator(self):
         return self.mediator
-
-    @QtCore.pyqtSlot(bool)
-    def on_configBtn_clicked(self):
-        self.getMediator().showConfigDialog()
 
     @QtCore.pyqtSlot(bool)
     def on_sourceCoordBtn_clicked(self):
@@ -95,6 +82,16 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             lambda x,y: self.targetCoordLe.setText('{x};{y}'.format(x=x, y=y))
         )
 
+    @QtCore.pyqtSlot(bool)
+    def on_resetBtn_clicked(self):
+        self.sourceCoordLe.setText('')
+        self.targetCoordLe.setText('')
+        self.widthLe.setText('')
+        self.heightLe.setText('')
+        self.tonnageLe.setText('')
+        self.maximumSpeedLe.setText('')
+        self.largeVehicleCbx.setChecked(False)
+
     def isValidInput(self):
         return (
             len(self.sourceCoordLe.text().split(';')) == 2
@@ -106,18 +103,24 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
     @cursorwait
     def on_runBtn_clicked(self):
         if not self.isValidInput():
-            self.showErrorMessageBox('Erro', 'Preencha todos os campos!')
+            self.showErrorMessageBox('Erro', 'Preencha as coordenadas de início e fim!')
             return
         try:
             self.getMediator().buildRoute(
                 (self.sourceCoordLe.text().split(';')[0], self.sourceCoordLe.text().split(';')[1]),
                 (self.targetCoordLe.text().split(';')[0], self.targetCoordLe.text().split(';')[1]),
-                (self.widthLe.text(), self.heightLe.text(), self.tonnageLe.text(), self.largeVehicleCbx.isChecked())
+                (
+                    self.widthLe.text(), 
+                    self.heightLe.text(), 
+                    self.tonnageLe.text(), 
+                    self.maximumSpeedLe.text(),
+                    self.largeVehicleCbx.isChecked()
+                )
             )
         except Exception as e:
             self.showErrorMessageBox(
                 'Erro', 
-                'Erro na criação da rota'
+                'Rota não encontrada!'
             )
             
     def setRouteInfo(self, distance, time):
@@ -133,19 +136,38 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             )
         )
     
-    def addRouteStepInfo(self, name, distance, time):
+    def addRouteStepInfo(self, 
+            name, 
+            distance, 
+            time, 
+            initials, 
+            paving, 
+            tracks, 
+            velocity, 
+            note
+        ):
         stepLb = QtWidgets.QLabel()
         stepLb.setText('''
-            <p><b>Nome:</b> {name}</p>
+            {name}
+            {initials}
+            {paving}
+            {tracks}
+            {velocity}
             <p><b>Distância:</b> {km}{m}</p>
             <p><b>Tempo:</b> {hours}{minutes}{seconds}</p>
+            {note}
             '''.format(
-                name=name if name else '',
+                name='<p><b>Nome:</b> {0}</p>'.format(name) if name else '',
+                initials='<p><b>Nome:</b> {0}</p>'.format(initials) if initials else '',
+                paving='<p><b>Pavimentação:</b> {0}</p>'.format(paving) if paving else '',
+                tracks='<p><b>Faixas:</b> {0}</p>'.format(tracks) if tracks else '',
+                velocity='<p><b>Velocidade (km/h):</b> {0}</p>'.format(velocity) if velocity else '',
                 km='{0} km'.format(distance[0]) if distance[0] else '',
                 m=' {0} m'.format(distance[1]) if distance[1] else '',
                 hours='{0} h'.format(time[0]) if time[0] else '',
                 minutes=' {0} m'.format(time[1]) if time[1] else '',
-                seconds=' {0} s'.format(time[2]) if time[2] else ''
+                seconds=' {0} s'.format(time[2]) if time[2] else '',
+                note='<p><b>Observações:</b> {0}</p>'.format(note) if note else '',
             )
         )
         stepLb.setStyleSheet("border-bottom-width: 1px; border-bottom-style: solid; border-radius: 0px;")
