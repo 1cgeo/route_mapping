@@ -193,12 +193,5 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         self.stepsListWidget.setItemWidget(itemN, stepLb)
 
     def removeAllRouteSteps(self):
-        """ layout = self.stepsScrollWidget.layout()
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget is None:
-                continue
-            widget.deleteLater() """
-        pass
+        self.stepsListWidget.clear()
             
