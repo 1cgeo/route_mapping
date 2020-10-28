@@ -128,7 +128,6 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
                 )
             )
         except Exception as e:
-            print(str(e))
             self.showErrorMessageBox(
                 'Erro', 
                 'Rota não encontrada!'
