@@ -67,7 +67,7 @@ class Postgres:
             sql.SQL(
                 """SELECT d.column_name, pg_get_constraintdef(c.oid)
                 FROM
-                (SELECT conname, consrc, oid FROM  pg_constraint) c
+                (SELECT conname, oid FROM  pg_constraint) c
                 INNER JOIN
                 (
                     SELECT column_name, constraint_name
