@@ -76,7 +76,8 @@ class RouteMappingCtrl:
 
     def unloadPlugin(self):
         self.qgis.activeTool('CreateRelationship', unsetTool=True)
-        self.cleanGeneratorDockSettings()
+        self.cleanRouteMarkers()
+        self.routeGeneratorDock.close()
         self.pluginToolBar.close()
 
     def activeCreateRelationshipTool(self):
@@ -101,10 +102,9 @@ class RouteMappingCtrl:
     def showRouteGeneratorDock(self):
         self.qgis.addDockWidget(self.routeGeneratorDock, side='left') 
 
-    def cleanGeneratorDockSettings(self):
+    def cleanRouteMarkers(self):
         self.captureSourceCoordTool.resetRubberBand() if self.captureSourceCoordTool else ''
         self.captureTargetCoordTool.resetRubberBand() if self.captureTargetCoordTool else ''
-        self.routeGeneratorDock.close()
 
     def activeCaptureSourceCoordinates(self, setCoordinate):
         if self.captureSourceCoordTool:
@@ -190,7 +190,8 @@ class RouteMappingCtrl:
                 step['paving'], 
                 step['tracks'], 
                 step['velocity'], 
-                step['note']
+                step['note'],
+                step['wkt']
             )
             totalKm += km
             totalHours += hours
@@ -253,4 +254,7 @@ class RouteMappingCtrl:
             'Aviso' if success else 'Erro',
             'Rede gerada com sucesso!' if success else 'Erro ao gerar rede!'
         )
+
+    def zoomToWkt(self, wkt):
+        self.qgis.zoomToWkt(wkt)
         

@@ -65,9 +65,9 @@ class Postgres:
     def getLayerContrainsCodes(self, cursor, layerName):
         cursor.execute(
             sql.SQL(
-                """SELECT d.column_name, c.consrc
+                """SELECT d.column_name, pg_get_constraintdef(c.oid)
                 FROM
-                (SELECT conname, consrc FROM  pg_constraint) c
+                (SELECT conname, consrc, oid FROM  pg_constraint) c
                 INNER JOIN
                 (
                     SELECT column_name, constraint_name
@@ -194,18 +194,10 @@ class Postgres:
             routeSchemaName,
             restrictionSchemaName,
             restrictionTableName,
-            sourcePoint,
-            targetPoint,
             vehicle
         ):
         cursor.execute(
-            sql.SQL('''WITH sourcepoint AS (
-                    SELECT ST_GeomFromText('POINT(%(sourceX)s %(sourceY)s)', %(srid)s) AS "geom"
-                ),
-                targetpoint AS (
-                    SELECT ST_GeomFromText('POINT(%(targetX)s %(targetY)s)', %(srid)s) AS "geom"
-                ),
-                routeedges AS (
+            sql.SQL('''WITH routeedges AS (
                     SELECT
                             *
                     FROM 
@@ -275,10 +267,6 @@ class Postgres:
                 'edgeTargetId': int(targetPointEdgeInfo[0]),
                 'edgeTargetPos': float(targetPointEdgeInfo[1]),
                 'srid': int(srid),
-                'sourceX': float(sourcePoint[0]),
-                'sourceY': float(sourcePoint[1]),
-                'targetX': float(targetPoint[0]),
-                'targetY': float(targetPoint[1]),
                 'edgeQuery': self.getEdgeQuery(routeSchemaName, *vehicle)
             }
         )
@@ -293,7 +281,8 @@ class Postgres:
             'paving': item[6],
             'tracks': item[7],
             'note': item[8],
-            'wkt': item[9]  
+            'wkt': item[9],
+            'cost': item[10]   
         } for item in query]
 
     def getOutputRouteQuery(self, vehicleMaxSpeed, isLargeVehicle):
@@ -307,7 +296,8 @@ class Postgres:
             tipopavimentacao,
             nrfaixas,
             observacao,
-            ST_AsText(geom) AS "wkt"
+            ST_AsText(geom) AS "wkt",
+            cost
         FROM route ORDER BY seq;
         '''.format(
             velocity=self.getVelocityExpression(vehicleMaxSpeed, isLargeVehicle)
@@ -331,7 +321,13 @@ class Postgres:
                 source::INT4, 
                 target::INT4, 
                 (3.6 * distanciakm/{velocity}) AS cost, 
-                reverse_cost::FLOAT8 
+                (
+                    CASE
+                        WHEN bidirecional = TRUE 
+                        THEN (3.6 * distanciakm/{velocity})
+                        ELSE -1
+                    END
+                )::FLOAT8 AS reverse_cost
             FROM 
                 {routeSchemaName}.rotas_noded
             {where}
@@ -385,25 +381,6 @@ class Postgres:
                     {routeSchema}.{edgeTable}
                 SET 
                     distanciakm = ST_Length(ST_Transform(rgeom, %(srid)s)::geography) / 1000;
-                ALTER TABLE 
-                    {routeSchema}.{edgeTable}
-                ADD COLUMN IF NOT EXISTS 
-                    limitevelocidade INT4;
-                UPDATE {routeSchema}.{edgeTable} SET limitevelocidade = 
-                    CASE
-                        WHEN old.limitevelocidade IS NOT NULL 
-                        THEN old.limitevelocidade
-                        ELSE 60
-                    END
-                FROM 
-                    {routeSchema}.{routeTable} as old
-                WHERE 
-                    {routeSchema}.{edgeTable}.old_id = old.id;
-                ALTER TABLE 
-                    {routeSchema}.{edgeTable}
-                ADD COLUMN IF NOT EXISTS 
-                    cost FLOAT8;
-                UPDATE {routeSchema}.{edgeTable} SET cost = (3.6 * distanciakm / limitevelocidade);
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
                     bidirecional boolean;
@@ -415,18 +392,6 @@ class Postgres:
                     {routeSchema}.{tmpRouteTable} AS trecho 
                 WHERE 
                     noded.old_id = trecho.id;
-                ALTER TABLE {routeSchema}.{edgeTable} 
-                ADD COLUMN IF NOT EXISTS 
-                    reverse_cost FLOAT8;
-                UPDATE 
-                    {routeSchema}.{edgeTable} as noded
-                SET 
-                    reverse_cost = 
-                        CASE
-                            WHEN noded.bidirecional = TRUE 
-                            THEN noded.cost
-                            ELSE -1
-                        END;
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
                     nome TEXT;
@@ -472,7 +437,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    limitevelocidade = (SELECT limitevelocidade FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    limitevelocidade = (SELECT limitevelocidade::FLOAT8 FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 

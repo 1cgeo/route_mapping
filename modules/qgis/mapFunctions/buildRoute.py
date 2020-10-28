@@ -43,10 +43,9 @@ class BuildRoute(MapFunction):
             routeSchema,
             restrictionSchema,
             restrictionTable,
-            sourcePoint,
-            targetPoint,
             vehicle
         )
+        self.isValidRoute(route)
         valueMaps = database.getAttributeValueMap(routeTable, routeSchema)
         self.exportToMemoryLayer(
             route, 
@@ -55,17 +54,11 @@ class BuildRoute(MapFunction):
         )
         return route
 
-    def getMemoryLayerFieldsUrl(self):
-        fields = [
-            ('id', 'int'),
-            ('nome', 'string'),
-            ('sigla', 'string'),
-            ('pavimentacao', 'string'),
-            ('faixas', 'string'),
-            ('velocidade', 'double'),
-            ('observacao', 'string')
-        ]
-        return '&field='+'&field='.join([ '{0}:{1}'.format(row[0], row[1]) for row in fields])
+    def isValidRoute(self, route):
+        for step in route:
+            if not(int(step['cost']) >= 10000):
+                continue
+            raise Exception("Route not found")
 
     def exportToMemoryLayer(self, route, srid, valueMaps):
         vectorLyr =  core.QgsVectorLayer(
@@ -89,6 +82,19 @@ class BuildRoute(MapFunction):
             feat.setGeometry(QgsGeometry.fromWkt(step['wkt']))
             vl.addFeature(feat)
         vl.commitChanges()
+
+    def getMemoryLayerFieldsUrl(self):
+        fields = [
+            ('id', 'int'),
+            ('nome', 'string'),
+            ('sigla', 'string'),
+            ('pavimentacao', 'string'),
+            ('faixas', 'string'),
+            ('velocidade', 'double'),
+            ('observacao', 'string')
+        ]
+        return '&field='+'&field='.join([ '{0}:{1}'.format(row[0], row[1]) for row in fields])
+
 
         
 

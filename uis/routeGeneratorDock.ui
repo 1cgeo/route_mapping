@@ -30,82 +30,8 @@
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="2" column="1" colspan="3">
-         <widget class="QLineEdit" name="widthLe"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_5">
-          <property name="text">
-           <string>Altura (m):</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1" colspan="3">
-         <widget class="QLineEdit" name="heightLe"/>
-        </item>
-        <item row="7" column="2">
-         <widget class="QPushButton" name="resetBtn">
-          <property name="text">
-           <string>Resetar</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="3" colspan="2">
-         <widget class="QPushButton" name="runBtn">
-          <property name="text">
-           <string>Gerar rota</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="0" colspan="5">
+        <item row="9" column="0" colspan="5">
          <widget class="QLabel" name="routeInfoLb">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Etapas:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0" colspan="5">
-         <widget class="QScrollArea" name="stepsScrollArea">
-          <property name="widgetResizable">
-           <bool>true</bool>
-          </property>
-          <widget class="QWidget" name="stepsScrollWidget">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>437</width>
-             <height>170</height>
-            </rect>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout"/>
-          </widget>
-         </widget>
-        </item>
-        <item row="1" column="1" colspan="3">
-         <widget class="QLineEdit" name="targetCoordLe"/>
-        </item>
-        <item row="0" column="4">
-         <widget class="QPushButton" name="sourceCoordBtn">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
           <property name="text">
            <string/>
           </property>
@@ -124,10 +50,51 @@
           </property>
          </widget>
         </item>
+        <item row="2" column="1" colspan="3">
+         <widget class="QLineEdit" name="widthLe">
+          <property name="placeholderText">
+           <string>Preenchimento opcional</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" colspan="3">
+         <widget class="QLineEdit" name="targetCoordLe">
+          <property name="placeholderText">
+           <string>Long;Lat</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Fim:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4">
+         <widget class="QPushButton" name="sourceCoordBtn">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_4">
           <property name="text">
            <string>Largura (m):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2">
+         <widget class="QPushButton" name="resetBtn">
+          <property name="text">
+           <string>Resetar</string>
           </property>
          </widget>
         </item>
@@ -138,24 +105,48 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_6">
+        <item row="8" column="3" colspan="2">
+         <widget class="QPushButton" name="runBtn">
           <property name="text">
-           <string>Tonelagem (ton):</string>
+           <string>Gerar rota</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Etapas:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1" colspan="3">
+         <widget class="QLineEdit" name="maximumSpeedLe">
+          <property name="placeholderText">
+           <string>Preenchimento opcional</string>
           </property>
          </widget>
         </item>
         <item row="4" column="1" colspan="3">
-         <widget class="QLineEdit" name="tonnageLe"/>
-        </item>
-        <item row="6" column="0" colspan="2">
-         <widget class="QCheckBox" name="largeVehicleCbx">
-          <property name="text">
-           <string>Veículo de grande porte</string>
+         <widget class="QLineEdit" name="tonnageLe">
+          <property name="placeholderText">
+           <string>Preenchimento opcional</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="0" colspan="2">
+        <item row="0" column="1" colspan="3">
+         <widget class="QLineEdit" name="sourceCoordLe">
+          <property name="placeholderText">
+           <string>Long;Lat</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -168,15 +159,12 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Fim:</string>
+        <item row="3" column="1" colspan="3">
+         <widget class="QLineEdit" name="heightLe">
+          <property name="placeholderText">
+           <string>Preenchimento opcional</string>
           </property>
          </widget>
-        </item>
-        <item row="0" column="1" colspan="3">
-         <widget class="QLineEdit" name="sourceCoordLe"/>
         </item>
         <item row="5" column="0">
          <widget class="QLabel" name="label_7">
@@ -185,8 +173,36 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="1" colspan="3">
-         <widget class="QLineEdit" name="maximumSpeedLe"/>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Altura (m):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Tonelagem (ton):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>Veículo de grande porte:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QCheckBox" name="largeVehicleCbx">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0" colspan="5">
+         <widget class="QListWidget" name="stepsListWidget"/>
         </item>
        </layout>
       </widget>

@@ -11,6 +11,12 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         self.mediator = mediator
         self.loadButtonSettings()
         self.loadInputSettings()
+        self.stepsListWidget.itemDoubleClicked.connect(self.zoomToStep)
+
+    @cursorwait
+    def zoomToStep(self, item):
+        stepLb = self.stepsListWidget.itemWidget(item)
+        self.getMediator().zoomToWkt(stepLb.geomWkt)
 
     def getUiPath(self):
         return os.path.join(
@@ -21,7 +27,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         )
 
     def closeEvent(self, e):
-        self.getMediator().cleanGeneratorDockSettings()
+        self.reset()
         
     def loadInputSettings(self):
         doubleValidator =  QtGui.QDoubleValidator(0, 300, 6, self)
@@ -82,8 +88,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             lambda x,y: self.targetCoordLe.setText('{x};{y}'.format(x=x, y=y))
         )
 
-    @QtCore.pyqtSlot(bool)
-    def on_resetBtn_clicked(self):
+    def reset(self):
         self.sourceCoordLe.setText('')
         self.targetCoordLe.setText('')
         self.widthLe.setText('')
@@ -91,6 +96,11 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         self.tonnageLe.setText('')
         self.maximumSpeedLe.setText('')
         self.largeVehicleCbx.setChecked(False)
+        self.getMediator().cleanRouteMarkers()
+
+    @QtCore.pyqtSlot(bool)
+    def on_resetBtn_clicked(self):
+        self.reset()
 
     def isValidInput(self):
         return (
@@ -118,6 +128,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
                 )
             )
         except Exception as e:
+            print(str(e))
             self.showErrorMessageBox(
                 'Erro', 
                 'Rota não encontrada!'
@@ -144,9 +155,11 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             paving, 
             tracks, 
             velocity, 
-            note
+            note,
+            geomWkt
         ):
         stepLb = QtWidgets.QLabel()
+        stepLb.geomWkt = geomWkt
         stepLb.setText('''
             {name}
             {initials}
@@ -171,14 +184,22 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             )
         )
         stepLb.setStyleSheet("border-bottom-width: 1px; border-bottom-style: solid; border-radius: 0px;")
-        self.stepsScrollWidget.layout().addWidget(stepLb)
+        #self.stepsScrollWidget.layout().addWidget(stepLb)
+        itemN = QtWidgets.QListWidgetItem() 
+        #Create widget
+        itemN.setSizeHint(stepLb.sizeHint())    
+
+        #Add widget to QListWidget funList
+        self.stepsListWidget.addItem(itemN)
+        self.stepsListWidget.setItemWidget(itemN, stepLb)
 
     def removeAllRouteSteps(self):
-        layout = self.stepsScrollWidget.layout()
+        """ layout = self.stepsScrollWidget.layout()
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
             if widget is None:
                 continue
-            widget.deleteLater()
+            widget.deleteLater() """
+        pass
             

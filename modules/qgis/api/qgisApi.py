@@ -104,3 +104,8 @@ class QgisApi(IQgisApi):
 
     def addToolBar(self, name):
         return iface.addToolBar(name)
+
+    def zoomToWkt(self, wkt):
+        geom = core.QgsGeometry.fromWkt(wkt)
+        iface.mapCanvas().setExtent(geom.boundingBox())
+        iface.mapCanvas().refresh()

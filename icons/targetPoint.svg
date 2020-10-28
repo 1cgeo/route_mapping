@@ -1,141 +1,52 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="iso-8859-1"?>
 <!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   version="1.1"
-   id="Capa_1"
-   x="0px"
-   y="0px"
-   viewBox="0 0 48 48"
-   xml:space="preserve"
-   sodipodi:docname="targetPoint.svg"
-   width="48"
-   height="48"
-   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"><metadata
-   id="metadata49"><rdf:RDF><cc:Work
-       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
-   id="defs47" /><sodipodi:namedview
-   pagecolor="#ffffff"
-   bordercolor="#666666"
-   borderopacity="1"
-   objecttolerance="10"
-   gridtolerance="10"
-   guidetolerance="10"
-   inkscape:pageopacity="0"
-   inkscape:pageshadow="2"
-   inkscape:window-width="1366"
-   inkscape:window-height="704"
-   id="namedview45"
-   showgrid="false"
-   inkscape:zoom="2.6074563"
-   inkscape:cx="-48.080646"
-   inkscape:cy="60.620315"
-   inkscape:window-x="0"
-   inkscape:window-y="27"
-   inkscape:window-maximized="1"
-   inkscape:current-layer="Capa_1" />
-<path
-   style="fill:#c2132c;stroke-width:0.10729983"
-   d="M 44.368529,8.664587 C 39.971785,3.1676025 32.327638,-0.11418163 23.920626,-0.11418163 c -8.407102,0 -16.0511295,3.28178413 -20.4479035,8.77867203 -4.38048318,5.4766616 -4.744044,12.1715776 -0.9720815,17.9089556 0.031329,0.04755 0.065939,0.09373 0.1038319,0.138231 L 19.152922,46.080873 c 1.0581,1.23848 2.84025,1.977914 4.767525,1.977914 v 0 c 1.927156,0 3.709574,-0.739434 4.767675,-1.977814 L 45.23642,26.711764 c 0.03819,-0.0445 0.0728,-0.09071 0.103832,-0.1382 3.771963,-5.73748 3.408402,-12.432394 -0.972081,-17.9089589 z"
-   id="path2"
-   inkscape:connector-curvature="0" />
-<path
-   style="fill:#ff3f5c;stroke-width:0.10729983"
-   d="m 23.920626,-0.11418163 c -8.407102,0 -16.0511295,3.28178413 -20.4479035,8.77867203 -4.38048318,5.4766616 -4.744044,12.1715776 -0.9720815,17.9089556 0.031329,0.04755 0.065939,0.09373 0.1038319,0.138231 L 19.152922,46.080873 c 1.0581,1.23848 2.84025,1.977914 4.767525,1.977914 v 0 z"
-   id="path4"
-   inkscape:connector-curvature="0" />
-<ellipse
-   style="fill:#a8d3d8;stroke-width:0.10729983"
-   cx="23.920624"
-   cy="18.119087"
-   rx="14.173781"
-   ry="10.869966"
-   id="ellipse6" />
-<path
-   style="fill:#f0f0f0;stroke-width:0.10729983"
-   d="m 23.920626,7.2488459 c -7.82806,0 -14.1740097,4.8668831 -14.1740097,10.8704401 0,6.00356 6.3459497,10.87034 14.1740097,10.87034 z"
-   id="path8"
-   inkscape:connector-curvature="0" />
-
-
-<g
-   id="g14"
-   transform="translate(0,-464)">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+<path style="fill:#C2132C;" d="M423.103,93.304C387.172,34.88,324.703,0,256,0C187.296,0,124.828,34.88,88.897,93.303
+	c-35.798,58.208-38.769,129.364-7.944,190.343c0.255,0.505,0.539,0.996,0.85,1.469l135.236,205.863
+	C225.686,504.141,240.25,512,256,512l0,0c15.749,0,30.315-7.859,38.962-21.021l135.235-205.863c0.311-0.473,0.595-0.964,0.85-1.469
+	C461.872,222.667,458.901,151.511,423.103,93.304z"/>
+<path style="fill:#FF3F5C;" d="M256,0C187.296,0,124.828,34.88,88.897,93.303c-35.798,58.208-38.769,129.364-7.944,190.343
+	c0.255,0.505,0.539,0.996,0.85,1.469l135.236,205.863C225.686,504.141,240.25,512,256,512l0,0V0z"/>
+<ellipse style="fill:#A8D3D8;" cx="256" cy="193.79" rx="115.83" ry="115.53"/>
+<path style="fill:#F0F0F0;" d="M256,78.257c-63.972,0-115.832,51.727-115.832,115.535S192.028,309.326,256,309.326V78.257z"/>
+<path style="fill:#3B4A51;" d="M298.844,161.867c-5.857-5.858-15.355-5.858-21.213,0l-17.768,17.767l-11.848,11.848
+	c-0.366,0.366-0.802,0.548-1.331,0.515c-0.517-0.024-0.947-0.239-1.277-0.637l-5.534-6.681l-4.559-5.503
+	c-5.286-6.379-14.741-7.267-21.121-1.982c-6.379,5.285-7.267,14.741-1.982,21.121l10.094,12.185
+	c5.691,6.87,14.066,11.049,22.978,11.465c0.493,0.023,0.984,0.035,1.476,0.035c8.393,0,16.512-3.345,22.471-9.304l29.615-29.615
+	C304.702,177.222,304.702,167.725,298.844,161.867z"/>
+<path style="fill:#537983;" d="M256,183.498l-7.984,7.984c-0.366,0.366-0.802,0.548-1.331,0.515
+	c-0.517-0.024-0.947-0.239-1.277-0.637l-5.534-6.681l-4.559-5.503c-5.286-6.379-14.741-7.267-21.121-1.982
+	c-6.379,5.285-7.267,14.741-1.982,21.121l10.094,12.185c5.691,6.87,14.066,11.049,22.978,11.465
+	c0.493,0.023,0.984,0.035,1.476,0.035c3.147,0,6.256-0.47,9.227-1.373L256,183.498z"/>
+<g>
 </g>
-<g
-   id="g16"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g18"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g20"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g22"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g24"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g26"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g28"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g30"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g32"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g34"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g36"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g38"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g40"
-   transform="translate(0,-464)">
+<g>
 </g>
-<g
-   id="g42"
-   transform="translate(0,-464)">
+<g>
 </g>
-<text
-   xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:24.35803795px;line-height:1.25;font-family:aakar;-inkscape-font-specification:aakar;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.60895097"
-   x="16.663815"
-   y="27.520658"
-   id="text321"
-   transform="scale(1.0685105,0.93588225)"><tspan
-     sodipodi:role="line"
-     id="tspan319"
-     x="16.663815"
-     y="27.520658"
-     style="stroke-width:0.60895097">F</tspan></text>
 </svg>

@@ -60,3 +60,6 @@ class QgisCtrl(IQgisCtrl):
 
     def addToolBar(self, name):
         return self.apiQGis.addToolBar(name)
+
+    def zoomToWkt(self, wkt):
+        self.apiQGis.zoomToWkt(wkt)
