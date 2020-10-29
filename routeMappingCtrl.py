@@ -9,6 +9,11 @@ class RouteMappingCtrl:
             'icons'
     )
 
+    ROOT_PATH_QML_STYLE = os.path.join(
+            os.path.dirname(__file__),
+            'qmlStyles'
+    )
+
     def __init__(self,
             qgis,
             messageFactory,
@@ -157,10 +162,18 @@ class RouteMappingCtrl:
                 routeSettings['dbUser'], 
                 routeSettings['dbPass']
             ),
-            vehicle
+            vehicle,
+            qmlStyle=self.getFileData(
+                os.path.join(self.ROOT_PATH_QML_STYLE, 'rota.qml')
+            )
         )
         self.showRouteInfo(route)
 
+    def getFileData(self, filePath):
+        f = open(filePath)
+        data = f.read()
+        f.close()
+        return data
 
     def showRouteInfo(self, route):
         self.routeGeneratorDock.removeAllRouteSteps()
@@ -187,7 +200,7 @@ class RouteMappingCtrl:
                 distance, 
                 time,
                 step['initials'], 
-                step['paving'], 
+                step['covering'], 
                 step['tracks'], 
                 step['velocity'], 
                 step['note'],
@@ -257,4 +270,37 @@ class RouteMappingCtrl:
 
     def zoomToWkt(self, wkt):
         self.qgis.zoomToWkt(wkt)
+
+    def loadRouteLayers(self):
+        loadLayer = self.qgis.getMapFunction('LoadLayer')
+        routeSettings = self.getRouteSettings()
+        for lyrSettings in self.getRouteLayerSettings():
+            loadLayer.run(
+                lyrSettings['schema'],
+                lyrSettings['table'],
+                routeSettings['dbName'], 
+                routeSettings['dbHost'], 
+                routeSettings['dbPort'], 
+                routeSettings['dbUser'], 
+                routeSettings['dbPass'],
+                lyrSettings['isGeom'],
+                lyrSettings['styleQml']
+            )
         
+    def getRouteLayerSettings(self):
+        return [
+            {
+                'schema': 'edgv',
+                'table': 'rot_restricao',
+                'styleQml': '',
+                'isGeom': False
+            },
+            {
+                'schema': 'edgv',
+                'table': 'rot_trecho_rede_rodoviaria_l',
+                'styleQml': self.getFileData(
+                    os.path.join(self.ROOT_PATH_QML_STYLE, 'rot_trecho_rede_rodoviaria_l.qml')
+                ),
+                'isGeom': True
+            }
+        ]

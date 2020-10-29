@@ -1,6 +1,7 @@
 from route_mapping.modules.qgis.mapFunctions.createRelationship import CreateRelationship
 from route_mapping.modules.qgis.mapFunctions.buildRoute import BuildRoute
 from route_mapping.modules.qgis.mapFunctions.buildRouteStructure import BuildRouteStructure
+from route_mapping.modules.qgis.mapFunctions.loadLayer import LoadLayer
 
 class MapFunctionsFactory:
 
@@ -8,6 +9,7 @@ class MapFunctionsFactory:
         functionNames = {
             'CreateRelationship': CreateRelationship,
             'BuildRoute': BuildRoute,
-            'BuildRouteStructure': BuildRouteStructure 
+            'BuildRouteStructure': BuildRouteStructure,
+            'LoadLayer': LoadLayer
         }
         return functionNames[functionName]()

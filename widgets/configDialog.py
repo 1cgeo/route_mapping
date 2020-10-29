@@ -1,6 +1,7 @@
 import os
 from PyQt5 import QtWidgets, QtGui, QtCore, uic
 from route_mapping.widgets.widget import Widget
+from route_mapping.modules.utils.decorators import cursorwait
 
 class ConfigDialog(QtWidgets.QDialog, Widget):
 
@@ -53,10 +54,21 @@ class ConfigDialog(QtWidgets.QDialog, Widget):
     def on_cancelBtn_clicked(self):
         self.close()
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.pyqtSlot()
+    @cursorwait
     def on_saveBtn_clicked(self):
         if self.isValidInput():
-            self.accept()
             self.getMediator().setRouteSettings(self.dump())
+            self.accept()
+            return
+        self.showErrorMessageBox('Erro', 'Preencha todos os campos!')
+
+    @QtCore.pyqtSlot()
+    @cursorwait
+    def on_saveAndLoadLayersBtn_clicked(self):
+        if self.isValidInput():
+            self.getMediator().setRouteSettings(self.dump())
+            self.getMediator().loadRouteLayers()
+            self.accept()
             return
         self.showErrorMessageBox('Erro', 'Preencha todos os campos!')

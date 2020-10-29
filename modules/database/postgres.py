@@ -278,7 +278,7 @@ class Postgres:
             'name': item[3],
             'velocity': item[4],
             'initials': item[5],
-            'paving': item[6],
+            'covering': item[6],
             'tracks': item[7],
             'note': item[8],
             'wkt': item[9],
@@ -293,7 +293,7 @@ class Postgres:
             nome,
             {velocity} AS velocity,
             sigla,
-            tipopavimentacao,
+            revestimento,
             nrfaixas,
             observacao,
             ST_AsText(geom) AS "wkt",
@@ -473,11 +473,11 @@ class Postgres:
 
                 ALTER TABLE {routeSchema}.{edgeTable}
                 ADD COLUMN IF NOT EXISTS 
-                    tipopavimentacao SMALLINT;
+                    revestimento SMALLINT;
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    tipopavimentacao = (SELECT tipopavimentacao FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    revestimento = (SELECT revestimento FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
                 ''').format(
                 routeSchema=sql.Identifier(routeSchemaName),
                 routeTable=sql.Identifier(routeTableName),

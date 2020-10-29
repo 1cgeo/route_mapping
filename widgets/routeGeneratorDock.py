@@ -96,6 +96,8 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         self.tonnageLe.setText('')
         self.maximumSpeedLe.setText('')
         self.largeVehicleCbx.setChecked(False)
+        self.routeInfoLb.setText('')
+        self.removeAllRouteSteps()
         self.getMediator().cleanRouteMarkers()
 
     @QtCore.pyqtSlot(bool)
@@ -151,7 +153,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             distance, 
             time, 
             initials, 
-            paving, 
+            covering, 
             tracks, 
             velocity, 
             note,
@@ -162,7 +164,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
         stepLb.setText('''
             {name}
             {initials}
-            {paving}
+            {covering}
             {tracks}
             {velocity}
             <p><b>Distância:</b> {km}{m}</p>
@@ -171,7 +173,7 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             '''.format(
                 name='<p><b>Nome:</b> {0}</p>'.format(name) if name else '',
                 initials='<p><b>Nome:</b> {0}</p>'.format(initials) if initials else '',
-                paving='<p><b>Pavimentação:</b> {0}</p>'.format(paving) if paving else '',
+                covering='<p><b>Revestimento:</b> {0}</p>'.format(covering) if covering else '',
                 tracks='<p><b>Faixas:</b> {0}</p>'.format(tracks) if tracks else '',
                 velocity='<p><b>Velocidade (km/h):</b> {0}</p>'.format(velocity) if velocity else '',
                 km='{0} km'.format(distance[0]) if distance[0] else '',

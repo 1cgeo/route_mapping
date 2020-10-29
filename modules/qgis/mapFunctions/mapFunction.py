@@ -1,5 +1,6 @@
 from qgis.utils import iface
 from qgis import gui, core
+from qgis.PyQt.QtXml import QDomDocument
 
 from route_mapping.modules.qgis.interfaces.IMapFunction import IMapFunction
 
@@ -43,6 +44,14 @@ class MapFunction(IMapFunction):
 
     def intersectingGeometries(self, sourceGeometry, targetGeometry):
         return sourceGeometry.intersects(targetGeometry)
+
+    def setQmlStyleToLayer(self, layer, qml):
+        doc = QDomDocument()
+        doc.setContent(qml)
+        result = layer.importNamedStyle(doc)
+        if not result[0]:
+            raise Exception('Erro estilo qml: {0}'.format(result[1]))
+        layer.triggerRepaint()
 
     def run(self, *args):
         pass

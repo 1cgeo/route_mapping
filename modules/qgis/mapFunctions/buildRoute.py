@@ -22,7 +22,8 @@ class BuildRoute(MapFunction):
             restrictionSchema,
             restrictionTable,
             dbConnection,
-            vehicle
+            vehicle,
+            qmlStyle
         ):
         srid = iface.mapCanvas().mapSettings().destinationCrs().postgisSrid()
         database = self.databaseFactory.createPostgres(*dbConnection)
@@ -47,11 +48,12 @@ class BuildRoute(MapFunction):
         )
         self.isValidRoute(route)
         valueMaps = database.getAttributeValueMap(routeTable, routeSchema)
-        self.exportToMemoryLayer(
+        layer = self.exportToMemoryLayer(
             route, 
             srid,
             valueMaps
         )
+        self.setQmlStyleToLayer(layer, qmlStyle)
         return route
 
     def isValidRoute(self, route):
@@ -67,28 +69,29 @@ class BuildRoute(MapFunction):
         vl = core.QgsProject().instance().addMapLayer(vectorLyr)
         vl.startEditing()
         feat = core.QgsFeature(vl.fields())
-        pavingValueMap = [ valueMap for valueMap in valueMaps if valueMap['attribute'] == 'tipopavimentacao']
+        pavingValueMap = [ valueMap for valueMap in valueMaps if valueMap['attribute'] == 'revestimento']
         pavingValueMap = pavingValueMap[0]['valueMap'] if pavingValueMap else {}
         getPavingValue = lambda code, valueMap=pavingValueMap: list(pavingValueMap.keys())[list(pavingValueMap.values()).index(code)]
         for step in route:
-            step['paving'] = getPavingValue(step['paving']).split('(')[0].strip()
+            step['covering'] = getPavingValue(step['covering']).split('(')[0].strip()
             feat.setAttribute('id', step['seq'])
             feat.setAttribute('nome', step['name'])
             feat.setAttribute('sigla', step['initials'])
-            feat.setAttribute('pavimentacao', step['paving'])
+            feat.setAttribute('revestimento', step['covering'])
             feat.setAttribute('faixas', step['tracks'])
             feat.setAttribute('velocidade', step['velocity'])
             feat.setAttribute('observacao', step['note'])
             feat.setGeometry(QgsGeometry.fromWkt(step['wkt']))
             vl.addFeature(feat)
         vl.commitChanges()
+        return vl
 
     def getMemoryLayerFieldsUrl(self):
         fields = [
             ('id', 'int'),
             ('nome', 'string'),
             ('sigla', 'string'),
-            ('pavimentacao', 'string'),
+            ('revestimento', 'string'),
             ('faixas', 'string'),
             ('velocidade', 'double'),
             ('observacao', 'string')
