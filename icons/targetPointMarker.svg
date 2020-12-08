@@ -21,7 +21,7 @@
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"><metadata
    id="metadata49"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
    id="defs47" /><sodipodi:namedview
    pagecolor="#ffffff"
    bordercolor="#666666"
@@ -36,8 +36,8 @@
    id="namedview45"
    showgrid="false"
    inkscape:zoom="5.2149125"
-   inkscape:cx="27.874953"
-   inkscape:cy="32.598655"
+   inkscape:cx="-10.860117"
+   inkscape:cy="31.831624"
    inkscape:window-x="0"
    inkscape:window-y="27"
    inkscape:window-maximized="1"
@@ -65,12 +65,12 @@
    id="path8"
    inkscape:connector-curvature="0" />
 <path
-   style="fill:#3b4a51;stroke-width:0.07636885"
+   style="fill:#aa0000;stroke-width:0.07636885"
    d="m 15.116651,15.409342 c -0.366985,-0.545268 -0.962105,-0.545268 -1.329152,0 l -1.113297,1.653766 -0.742365,1.102822 c -0.02293,0.03407 -0.05025,0.05101 -0.0834,0.04793 -0.03239,-0.0022 -0.05934,-0.02225 -0.08001,-0.05929 L 11.42168,17.532699 11.136025,17.020476 C 10.804818,16.426713 10.212392,16.344057 9.8126376,16.835988 9.4129459,17.32792 9.3573059,18.208092 9.6884504,18.801948 l 0.6324636,1.134189 c 0.356584,0.639465 0.88134,1.02845 1.439743,1.067171 0.03089,0.0021 0.06165,0.0033 0.09248,0.0033 0.525884,0 1.0346,-0.311355 1.407975,-0.866025 l 1.8556,-2.756588 c 0.366983,-0.545359 0.366983,-1.429348 -6.3e-5,-1.974615 z"
    id="path10"
    inkscape:connector-curvature="0" />
 <path
-   style="fill:#537983;stroke-width:0.07636885"
+   style="fill:#ff0000;stroke-width:0.07636885"
    d="M 12.432156,17.422773 11.9319,18.16593 C 11.90897,18.2 11.88165,18.21694 11.8485,18.21386 11.81611,18.21166 11.78916,18.19161 11.76849,18.15457 L 11.421743,17.532699 11.136088,17.020476 C 10.804881,16.426713 10.212454,16.344057 9.8127,16.835988 9.4130083,17.32792 9.3573687,18.208092 9.6885135,18.801948 l 0.6324635,1.134189 c 0.356583,0.639465 0.88134,1.02845 1.439742,1.067171 0.03089,0.0021 0.06166,0.0033 0.09248,0.0033 0.197183,0 0.391985,-0.04375 0.57814,-0.127801 z"
    id="path12"
    inkscape:connector-curvature="0" />
