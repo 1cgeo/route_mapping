@@ -389,7 +389,7 @@ class Postgres:
                 SET 
                     bidirecional = trecho.bidirecional
                 FROM 
-                    {routeSchema}.{tmpRouteTable} AS trecho 
+                    {routeSchema}.{routeTable} AS trecho 
                 WHERE 
                     noded.old_id = trecho.id;
                 ALTER TABLE {routeSchema}.{edgeTable} 
@@ -398,22 +398,22 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    nome = (SELECT nome FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    nome = (SELECT nome FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
                 
                 ALTER TABLE {routeSchema}.{edgeTable} ADD COLUMN IF NOT EXISTS 
-                    larguramaxima FLOAT8;
-                UPDATE 
-                    {routeSchema}.{edgeTable} AS noded
-                SET 
-                    larguramaxima = (SELECT larguramaxima FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
-
-                ALTER TABLE {routeSchema}.{edgeTable} 
-                ADD COLUMN IF NOT EXISTS 
                     alturamaxima FLOAT8;
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    alturamaxima = (SELECT alturamaxima FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    alturamaxima = (SELECT altura_maxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
+
+                ALTER TABLE {routeSchema}.{edgeTable} 
+                ADD COLUMN IF NOT EXISTS 
+                    larguramaxima FLOAT8;
+                UPDATE 
+                    {routeSchema}.{edgeTable} AS noded
+                SET 
+                    larguramaxima = (SELECT largura_maxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -421,7 +421,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    tonelagemmaxima = (SELECT tonelagemmaxima FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    tonelagemmaxima = (SELECT tonelagem_maxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -429,7 +429,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    proibidocaminhoes = (SELECT proibidocaminhoes FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    proibidocaminhoes = (SELECT proibido_caminhoes FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -437,7 +437,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    limitevelocidade = (SELECT limitevelocidade::FLOAT8 FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    limitevelocidade = (SELECT limitevelocidade::FLOAT8 FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -445,7 +445,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    limitevelocidadeveiculospesados = (SELECT limitevelocidadeveiculospesados FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    limitevelocidadeveiculospesados = (SELECT limite_velocidade_veiculos_pesados FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
                 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -453,7 +453,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    sigla = (SELECT sigla FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    sigla = (SELECT sigla FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -461,7 +461,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    observacao = (SELECT observacao FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    observacao = (SELECT observacao FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -469,7 +469,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    nrfaixas = (SELECT nrfaixas FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    nrfaixas = (SELECT nrfaixas FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable}
                 ADD COLUMN IF NOT EXISTS 
@@ -477,7 +477,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    revestimento = (SELECT revestimento FROM {routeSchema}.{tmpRouteTable} WHERE id = noded.old_id);
+                    revestimento = (SELECT revestimento FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
                 ''').format(
                 routeSchema=sql.Identifier(routeSchemaName),
                 routeTable=sql.Identifier(routeTableName),
