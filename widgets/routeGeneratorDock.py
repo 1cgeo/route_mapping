@@ -65,6 +65,16 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
                     'targetPoint.svg'
                 ),
                 'toolTip': 'Obter ponto do mapa'
+            },
+            {
+                'button': self.changeCoordBtn,
+                'iconPath': os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)),
+                    '..',
+                    'icons',
+                    'change.svg'
+                ),
+                'toolTip': 'Inverter coordenadas'
             }
         ]
 
@@ -75,6 +85,18 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
 
     def getMediator(self):
         return self.mediator
+
+    @QtCore.pyqtSlot(bool)
+    def on_changeCoordBtn_clicked(self):
+        targetPoint = self.sourceCoordLe.text().split(';')
+        sourcePoint = self.targetCoordLe.text().split(';')
+        if len(targetPoint) == 2:
+            self.targetCoordLe.setText('{x};{y}'.format(x=targetPoint[0], y=targetPoint[1]))
+            self.getMediator().setTargetCoordToolPoint(targetPoint)
+        if len(sourcePoint) == 2:
+            self.sourceCoordLe.setText('{x};{y}'.format(x=sourcePoint[0], y=sourcePoint[1]))
+            self.getMediator().setSourceCoordToolPoint(sourcePoint)
+            
 
     @QtCore.pyqtSlot(bool)
     def on_sourceCoordBtn_clicked(self):

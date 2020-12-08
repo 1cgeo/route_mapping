@@ -125,6 +125,12 @@ class RouteMappingCtrl:
         }
         self.captureSourceCoordTool = self.qgis.activeTool('GetClickCoordinates', settings=settings)
 
+    def setSourceCoordToolPoint(self, point):
+        self.captureSourceCoordTool.setCoordinate(*point) if self.captureSourceCoordTool else ''
+    
+    def setTargetCoordToolPoint(self, point):
+        self.captureTargetCoordTool.setCoordinate(*point) if self.captureTargetCoordTool else ''
+
     def activeCaptureTargetCoordinates(self, setCoordinate):
         if self.captureTargetCoordTool:
             self.qgis.setMapTool(self.captureTargetCoordTool)

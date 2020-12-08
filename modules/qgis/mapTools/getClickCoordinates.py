@@ -56,4 +56,8 @@ class  GetClickCoordinates(QgsMapToolIdentify, MapTool):
         self.resetRubberBand()
         self.rubberBand.addPoint(qgsPoint)
         iface.mapCanvas().refresh()
-        
+
+    def setCoordinate(self, x, y):
+        self.resetRubberBand()
+        self.rubberBand.addPoint(core.QgsPointXY(float(x), float(y)))
+        iface.mapCanvas().refresh()
