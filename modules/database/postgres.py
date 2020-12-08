@@ -405,7 +405,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    alturamaxima = (SELECT altura_maxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
+                    alturamaxima = (SELECT alturamaxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -413,7 +413,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    larguramaxima = (SELECT largura_maxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
+                    larguramaxima = (SELECT larguramaxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -421,7 +421,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    tonelagemmaxima = (SELECT tonelagem_maxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
+                    tonelagemmaxima = (SELECT tonelagemmaxima FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -429,7 +429,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    proibidocaminhoes = (SELECT proibido_caminhoes FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
+                    proibidocaminhoes = (SELECT proibidocaminhoes FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
@@ -445,7 +445,7 @@ class Postgres:
                 UPDATE 
                     {routeSchema}.{edgeTable} AS noded
                 SET 
-                    limitevelocidadeveiculospesados = (SELECT limite_velocidade_veiculos_pesados FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
+                    limitevelocidadeveiculospesados = (SELECT limitevelocidadeveiculospesados FROM {routeSchema}.{routeTable} WHERE id = noded.old_id);
                 
                 ALTER TABLE {routeSchema}.{edgeTable} 
                 ADD COLUMN IF NOT EXISTS 
