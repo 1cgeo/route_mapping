@@ -4,7 +4,7 @@ email=me@example.com
 author=1cgeo
 qgisMinimumVersion=3.0
 description=Conjunto de ferramentas para roteamento
-version=0.0.0
+version=0.0.1
 repository=https://github.com/1cgeo/route_mapping
 icon=icons/targetPoint.svg
 ; end of mandatory metadata

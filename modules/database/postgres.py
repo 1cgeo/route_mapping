@@ -344,9 +344,9 @@ class Postgres:
             isLargeVehicle
         ):
         conditional = [
-            '(larguramaxima IS NULL OR larguramaxima > {0})'.format(vehicleWidth) if vehicleWidth else '',
-            '(alturamaxima IS NULL OR alturamaxima > {0})'.format(vehicleHeght) if vehicleHeght else '',
-            '(tonelagemmaxima IS NULL OR tonelagemmaxima > {0})'.format(vehicleTonnage) if vehicleTonnage else '',
+            '(larguramaxima IS NULL OR larguramaxima >= {0})'.format(vehicleWidth) if vehicleWidth else '',
+            '(alturamaxima IS NULL OR alturamaxima >= {0})'.format(vehicleHeght) if vehicleHeght else '',
+            '(tonelagemmaxima IS NULL OR tonelagemmaxima >= {0})'.format(vehicleTonnage) if vehicleTonnage else '',
             '(proibidocaminhoes IS FALSE OR proibidocaminhoes IS NULL )' if isLargeVehicle else ''
         ]
         conditional = ' AND '.join(list(filter(lambda row: True if row else False, conditional)))

@@ -144,10 +144,10 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
                 (self.sourceCoordLe.text().split(';')[0], self.sourceCoordLe.text().split(';')[1]),
                 (self.targetCoordLe.text().split(';')[0], self.targetCoordLe.text().split(';')[1]),
                 (
-                    self.widthLe.text(), 
-                    self.heightLe.text(), 
-                    self.tonnageLe.text(), 
-                    self.maximumSpeedLe.text(),
+                self.widthLe.text().replace(',', '.'), 
+                self.heightLe.text().replace(',', '.'), 
+                self.tonnageLe.text().replace(',', '.'), 
+                self.maximumSpeedLe.text().replace(',', '.'),
                     self.largeVehicleCbx.isChecked()
                 )
             )
