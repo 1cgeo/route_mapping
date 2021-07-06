@@ -140,17 +140,30 @@ class RouteGeneratorDock(QtWidgets.QDockWidget, Widget):
             self.showErrorMessageBox('Erro', 'Preencha as coordenadas de início e fim!')
             return
         try:
-            self.getMediator().buildRoute(
-                (self.sourceCoordLe.text().split(';')[0], self.sourceCoordLe.text().split(';')[1]),
-                (self.targetCoordLe.text().split(';')[0], self.targetCoordLe.text().split(';')[1]),
-                (
-                self.widthLe.text().replace(',', '.'), 
-                self.heightLe.text().replace(',', '.'), 
-                self.tonnageLe.text().replace(',', '.'), 
-                self.maximumSpeedLe.text().replace(',', '.'),
-                    self.largeVehicleCbx.isChecked()
+            if self.withoutRestrictionCbx.isChecked():
+                self.getMediator().buildRouteWithoutRestriction(
+                    (self.sourceCoordLe.text().split(';')[0], self.sourceCoordLe.text().split(';')[1]),
+                    (self.targetCoordLe.text().split(';')[0], self.targetCoordLe.text().split(';')[1]),
+                    (
+                    self.widthLe.text().replace(',', '.'), 
+                    self.heightLe.text().replace(',', '.'), 
+                    self.tonnageLe.text().replace(',', '.'), 
+                    self.maximumSpeedLe.text().replace(',', '.'),
+                        self.largeVehicleCbx.isChecked()
+                    )
                 )
-            )
+            else:
+                self.getMediator().buildRoute(
+                    (self.sourceCoordLe.text().split(';')[0], self.sourceCoordLe.text().split(';')[1]),
+                    (self.targetCoordLe.text().split(';')[0], self.targetCoordLe.text().split(';')[1]),
+                    (
+                    self.widthLe.text().replace(',', '.'), 
+                    self.heightLe.text().replace(',', '.'), 
+                    self.tonnageLe.text().replace(',', '.'), 
+                    self.maximumSpeedLe.text().replace(',', '.'),
+                        self.largeVehicleCbx.isChecked()
+                    )
+                )
         except Exception as e:
             self.showErrorMessageBox(
                 'Erro', 

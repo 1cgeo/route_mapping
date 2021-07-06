@@ -186,6 +186,107 @@ class Postgres:
         return (query[0], query[1],)
 
     @notransaction
+    def getRouteWithoutRestriction(self,
+            cursor,
+            sourcePointEdgeInfo,
+            targetPointEdgeInfo,
+            srid,
+            routeSchemaName,
+            vehicle
+        ):
+        cursor.execute(
+            sql.SQL('''WITH routeedges AS (
+                    SELECT
+                            *
+                    FROM 
+                        pgr_trsp(
+                            %(edgeQuery)s, 
+                            %(edgeSourceId)s, 
+                            %(edgeSourcePos)s, 
+                            %(edgeTargetId)s, 
+                            %(edgeTargetPos)s,
+                            FALSE,
+                            FALSE
+                        )
+                    WHERE id1 >= 0 OR id2 >= 0
+                    ORDER BY seq
+                ),
+                route AS (
+                    SELECT
+                        rota_geom.*,
+                        CASE
+                            WHEN (SELECT max(seq) AS seq FROM routeedges) = 0 THEN
+                                CASE
+                                    WHEN %(edgeSourcePos)s > %(edgeTargetPos)s
+                                    THEN ST_LineSubstring(ST_Transform(geom_linha, %(srid)s), %(edgeTargetPos)s, %(edgeSourcePos)s)
+                                    ELSE ST_LineSubstring(ST_Transform(geom_linha, %(srid)s), %(edgeSourcePos)s, %(edgeTargetPos)s)
+                                END
+                            WHEN seq = 0 THEN
+                                CASE
+                                    WHEN ST_LineLocatePoint(ST_Transform(geom_linha, %(srid)s), geom_ponto_next) > %(edgeSourcePos)s
+                                    THEN ST_LineSubstring(ST_Transform(geom_linha, %(srid)s), %(edgeSourcePos)s, 1)
+                                    ELSE ST_LineSubstring(ST_Transform(geom_linha, %(srid)s), 0, %(edgeSourcePos)s)
+                                END
+                            WHEN seq = (SELECT max(seq) AS seq FROM routeedges) THEN
+                                CASE
+                                    WHEN ST_LineLocatePoint(ST_Transform(geom_linha, %(srid)s), geom_ponto) > %(edgeTargetPos)s
+                                    THEN ST_LineSubstring(ST_Transform(geom_linha, %(srid)s), %(edgeTargetPos)s, 1)
+                                    ELSE ST_LineSubstring(ST_Transform(geom_linha, %(srid)s), 0, %(edgeTargetPos)s)
+                                END
+                            ELSE ST_Transform(geom_linha, %(srid)s)
+                        END
+                        AS geom
+                    FROM (
+                        SELECT routeedges.*, rn.*, v.the_geom AS geom_ponto, rn.rgeom AS geom_linha, LEAD(v.the_geom,1) OVER(ORDER BY routeedges.seq) AS geom_ponto_next
+                        FROM edgv.rotas_noded AS rn
+                        INNER JOIN routeedges ON routeedges.id2 = rn.id
+                        LEFT JOIN edgv.rotas_noded_vertices_pgr AS v ON routeedges.id1 = v.id
+                    ) AS rota_geom
+                )
+                {outputQuery}'''
+            ).format(
+                outputQuery=sql.SQL(self.getOutputRouteQuery(vehicle[-2], vehicle[-1]))
+            ),
+            {
+                'edgeSourceId': int(sourcePointEdgeInfo[0]),
+                'edgeSourcePos': float(sourcePointEdgeInfo[1]),
+                'edgeTargetId': int(targetPointEdgeInfo[0]),
+                'edgeTargetPos': float(targetPointEdgeInfo[1]),
+                'srid': int(srid),
+                'edgeQuery': self.getEdgeQueryWithoutRestriction(routeSchemaName)
+            }
+        )
+        query = cursor.fetchall()
+        return [{
+            'seq': item[0],
+            'hours': item[1],
+            'distancekm': item[2],
+            'name': item[3],
+            'velocity': item[4],
+            'initials': item[5],
+            'covering': item[6],
+            'tracks': item[7],
+            'note': item[8],
+            'wkt': item[9],
+            'cost': item[10]   
+        } for item in query]
+
+    def getEdgeQueryWithoutRestriction(self, 
+            routeSchemaName
+        ):
+        return '''
+            SELECT 
+                id::INT4, 
+                source::INT4, 
+                target::INT4, 
+                1::FLOAT8 AS cost
+            FROM 
+                {routeSchemaName}.rotas_noded
+            '''.format(
+                routeSchemaName=routeSchemaName
+            )
+
+    @notransaction
     def getRoute(self,
             cursor,
             sourcePointEdgeInfo,

@@ -1,6 +1,8 @@
 from route_mapping.config import Config
 from route_mapping.factories.guiFactory import GuiFactory
 import os, json
+from qgis.utils import iface
+
 
 class RouteMappingCtrl:
 
@@ -83,7 +85,7 @@ class RouteMappingCtrl:
         self.qgis.activeTool('CreateRelationship', unsetTool=True)
         self.cleanRouteMarkers()
         self.routeGeneratorDock.close()
-        self.pluginToolBar.close()
+        iface.mainWindow().removeToolBar( self.pluginToolBar )
 
     def activeCreateRelationshipTool(self):
         if not self.validateSettings():
@@ -144,6 +146,36 @@ class RouteMappingCtrl:
             )
         }
         self.captureTargetCoordTool = self.qgis.activeTool('GetClickCoordinates', settings=settings)
+
+    def buildRouteWithoutRestriction(self, 
+            sourcePoint, 
+            targetPoint, 
+            vehicle
+        ):
+        if not self.validateSettings():
+                return
+        buildRoute = self.qgis.getMapFunction('BuildRouteWithoutRestriction')
+        routeSettings = self.getRouteSettings()
+        route = buildRoute.run(
+            sourcePoint,
+            targetPoint,
+            'edgv',
+            'rot_trecho_rede_rodoviaria_l',
+            'edgv',
+            'rot_restricao',
+            (
+                routeSettings['dbName'], 
+                routeSettings['dbHost'], 
+                routeSettings['dbPort'], 
+                routeSettings['dbUser'], 
+                routeSettings['dbPass']
+            ),
+            vehicle,
+            qmlStyle=self.getFileData(
+                os.path.join(self.ROOT_PATH_QML_STYLE, 'rota.qml')
+            )
+        )
+        self.showRouteInfo(route)
 
     def buildRoute(self, 
             sourcePoint, 
